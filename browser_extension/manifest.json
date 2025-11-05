@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Zk-Proof Login",
+  "version": "1.0",
+  "description": "Automatically fills in zk-proof login inputs.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["big-integer.js", "content.js"]
+    }
+  ]
+}

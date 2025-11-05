@@ -1,0 +1,13 @@
+{
+  "name": "core_api",
+  "version": "1.0.0",
+  "description": "ZK-Proof Login API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "big-integer": "^1.6.51"
+  }
+}
