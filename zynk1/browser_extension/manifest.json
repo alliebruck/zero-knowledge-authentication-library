@@ -1,0 +1,36 @@
+{
+    "manifest_version": 3,
+    "name": "Zynk1 Authenticator",
+    "version": "0.1.0",
+    "description": "Manages ZKP secrets for Zynk1 authentication.",
+    "permissions": [
+        "storage",
+        "tabs",
+        "windows"
+    ],
+    "host_permissions": [
+        "http://localhost:3000/*"
+    ],
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "content_security_policy": {
+        "extension_pages": "script-src 'self' 'wasm-unsafe-eval'"
+    },
+    "background": {
+        "service_worker": "background.js",
+        "type": "module"
+    },
+    "content_scripts": [
+        {
+            "matches": ["http://localhost:5000/*", "http://127.0.0.1:5000/*", "http://172.20.200.167:5000/*"],
+            "js": ["content.js"]
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": ["auth.wasm", "auth_final.zkey"],
+            "matches": ["<all_urls>"]
+        }
+    ]
+}

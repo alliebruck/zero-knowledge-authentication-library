@@ -1,0 +1,28 @@
+{
+  "name": "core_api",
+  "version": "1.0.0",
+  "main": "db_ops.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "description": "",
+  "dependencies": {
+    "@noble/curves": "^2.0.1",
+    "@noble/hashes": "^2.0.1",
+    "circomlib": "^2.0.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.15.3",
+    "snarkjs": "^0.7.5"
+  },
+  "devDependencies": {
+    "circomlibjs": "^0.1.7",
+    "jest": "^30.2.0"
+  }
+}
