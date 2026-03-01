@@ -27,8 +27,12 @@ function create_pub_key(secret_key) {
  * @param {Uint8Array} pub_key The public key.
  * @returns {object} The proof object containing r (as hex) and s (as hex).
  */
-function generate_proof(secret_key, pub_key) {
-    const message = pub_key; // Using public key as the message to be signed
+function generate_proof(secret_key, pub_key, challenge_bytes) {
+    // message = H(pub_key || challenge)
+    const message = new Uint8Array(pub_key.length + challenge_bytes.length);
+    message.set(pub_key, 0);
+    message.set(challenge_bytes, pub_key.length);
+
     const signature = ed25519.sign(message, secret_key);
     // The signature is the proof. We can split it into r and s components for clarity if needed.
     // ed25519.sign returns a 64-byte signature (r is 32 bytes, s is 32 bytes)

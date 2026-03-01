@@ -1,0 +1,17 @@
+{
+  "name": "zynk-webapp-tests",
+  "version": "1.0.0",
+  "description": "Selenium tests for the Zynk web application login flow",
+  "type": "module",
+  "main": "test_login.js",
+  "scripts": {
+    "test": "mocha test_login.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "mocha": "^10.0.0",
+    "selenium-webdriver": "^4.0.0"
+  }
+}

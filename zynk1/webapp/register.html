@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Zynk Register</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body class="auth-page">
+    <div class="auth-card single">
+      <h1 class="auth-title">Create account</h1>
+      <div id="registerDiv"></div>
+      <p class="auth-switch">
+        Already registered?
+        <a href="login.html">Log in</a>
+      </p>
+    </div>
+
+    <script src="webapi.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        gen_simplified_register_div("registerDiv");
+      });
+    </script>
+  </body>
+</html>

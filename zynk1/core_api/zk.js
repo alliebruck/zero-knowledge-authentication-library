@@ -26,27 +26,37 @@ function create_pub_key(secret_key) {
  * @param {Uint8Array} pub_key The public key.
  * @returns {object} The proof object containing r (as hex) and s (as hex).
  */
-function generate_proof(secret_key, pub_key) {
-    const message = pub_key; // Using public key as the message to be signed
-    const signature = ed25519.sign(message, secret_key);
-    // The signature is the proof. We can split it into r and s components for clarity if needed.
-    // ed25519.sign returns a 64-byte signature (r is 32 bytes, s is 32 bytes)
-    const r = signature.slice(0, 32);
-    const s = signature.slice(32, 64);
-    return { r: bytesToHex(r), s: bytesToHex(s) };
+function generate_proof(secret_key, pub_key, challenge_bytes) {
+  // message = H(pub_key || challenge)
+  const message = new Uint8Array(pub_key.length + challenge_bytes.length);
+  message.set(pub_key, 0);
+  message.set(challenge_bytes, pub_key.length);
+
+  const signature = ed25519.sign(message, secret_key);
+  const r = signature.slice(0, 32);
+  const s = signature.slice(32, 64);
+  return { r: bytesToHex(r), s: bytesToHex(s) };
 }
 
-function verify_proof(pub_key_hex, proof) {
-    try {
-        const pub_key_bytes = hexToBytes(pub_key_hex);
-        const signature_bytes = hexToBytes(proof.r + proof.s);
-        const message_bytes = pub_key_bytes; // The message signed was the public key itself
+function verify_proof(pub_key_hex, proof, challenge_bytes) {
+  console.log("verify_proof inputs:", { pub_key_hex, proof, challenge_bytes: bytesToHex(challenge_bytes) });
+  try {
+    const pub_key_bytes = hexToBytes(pub_key_hex);
+    const signature_bytes = hexToBytes(proof.r + proof.s);
 
-        return ed25519.verify(signature_bytes, message_bytes, pub_key_bytes);
-    } catch (error) {
-        console.error("Error during proof verification:", error);
-        return false;
-    }
+    const message = new Uint8Array(pub_key_bytes.length + challenge_bytes.length);
+    message.set(pub_key_bytes, 0);
+    message.set(challenge_bytes, pub_key_bytes.length);
+
+    return ed25519.verify(signature_bytes, message, pub_key_bytes);
+  } catch (error) {
+    console.error("Error during proof verification:", error);
+    return false;
+  }
 }
+
+
+
+
 
 export { create_random_key, create_pub_key, generate_proof, verify_proof };

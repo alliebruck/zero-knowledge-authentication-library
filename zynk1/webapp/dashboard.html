@@ -1,22 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Zynk1</title>
+<!doctype html>
+<html>
+  <head>
+    <title>Zynk Dashboard</title>
     <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <h1>Welcome to your Dashboard</h1>
-        <div id="dashboard-content">
-            <h3>Your Details</h3>
-            <p><strong>Email:</strong> <span id="userEmail"></span></p>
-
-            <p><strong>Registered:</strong> <span id="userRegistered"></span></p>
-        </div>
-        <button id="logoutButton">Logout</button>
+  </head>
+  <body class="dashboard-page">
+    <div class="dashboard-card">
+      <h1 class="dashboard-title">Welcome!</h1>
+      <div id="userInfo"></div>
+      <div id="dashboardContent"></div>
+      <button id="logoutButton">Logout</button>
     </div>
-    <script src="dashboard.js" type="module"></script>
-</body>
+
+    <script src="webapi.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const user = JSON.parse(sessionStorage.getItem("loggedInUser"));
+        if (!user) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        const userInfo = document.getElementById("userInfo");
+        userInfo.innerHTML = `
+          <p>Name: ${user.name}</p>
+          <p>Email: ${user.email}</p>
+          <p>Role: ${user.role}</p>
+        `;
+
+        const dashboardContent = document.getElementById("dashboardContent");
+        if (user.role === "student") {
+          dashboardContent.innerHTML = "<h2>Your Courses</h2><p>Here are your courses.</p>";
+        } else if (user.role === "advisor") {
+          dashboardContent.innerHTML = "<h2>Your Advisees</h2><p>Here are your advisees.</p>";
+        }
+
+        const logoutButton = document.getElementById("logoutButton");
+        logoutButton.addEventListener("click", () => {
+          sessionStorage.removeItem("loggedInUser");
+          window.location.href = "login.html";
+        });
+      });
+    </script>
+  </body>
 </html>

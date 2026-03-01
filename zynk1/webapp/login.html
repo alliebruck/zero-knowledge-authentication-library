@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Zynk Login</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body class="auth-page">
+    <div class="auth-card single">
+      <h1 class="auth-title">Sign in</h1>
+      <div id="loginDiv"></div>
+      <p class="auth-switch">
+        Don't have an account?
+        <a href="register.html">Register</a>
+      </p>
+    </div>
+
+    <script src="webapi.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        ZynkWebAPI.loginEndpoint = "http://localhost:3000/login_zk";
+        gen_auth_div("loginDiv", "dashboard.html");
+      });
+    </script>
+  </body>
+</html>
