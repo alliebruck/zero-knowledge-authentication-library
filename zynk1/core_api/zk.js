@@ -21,16 +21,24 @@ function create_pub_key(secret_key) {
 
 /**
  * Generates a Schnorr-like proof of knowledge of the secret key.
- * This is a signature of the public key.
+ * This is a signature of the public key and a challenge, including a timestamp.
  * @param {Uint8Array} secret_key The secret key.
  * @param {Uint8Array} pub_key The public key.
+ * @param {Uint8Array} challenge_bytes The random challenge/nonce.
+ * @param {number} timestamp The timestamp in milliseconds.
  * @returns {object} The proof object containing r (as hex) and s (as hex).
  */
-function generate_proof(secret_key, pub_key, challenge_bytes) {
-  // message = H(pub_key || challenge)
-  const message = new Uint8Array(pub_key.length + challenge_bytes.length);
+function generate_proof(secret_key, pub_key, challenge_bytes, timestamp) {
+  // Convert timestamp to 8 bytes (big-endian)
+  const ts_bytes = new Uint8Array(8);
+  const view = new DataView(ts_bytes.buffer);
+  view.setBigUint64(0, BigInt(timestamp));
+
+  // message = H(pub_key || challenge || timestamp)
+  const message = new Uint8Array(pub_key.length + challenge_bytes.length + ts_bytes.length);
   message.set(pub_key, 0);
   message.set(challenge_bytes, pub_key.length);
+  message.set(ts_bytes, pub_key.length + challenge_bytes.length);
 
   const signature = ed25519.sign(message, secret_key);
   const r = signature.slice(0, 32);
@@ -38,15 +46,20 @@ function generate_proof(secret_key, pub_key, challenge_bytes) {
   return { r: bytesToHex(r), s: bytesToHex(s) };
 }
 
-function verify_proof(pub_key_hex, proof, challenge_bytes) {
-  console.log("verify_proof inputs:", { pub_key_hex, proof, challenge_bytes: bytesToHex(challenge_bytes) });
+function verify_proof(pub_key_hex, proof, challenge_bytes, timestamp) {
+  console.log("verify_proof inputs:", { pub_key_hex, proof, challenge_bytes: bytesToHex(challenge_bytes), timestamp });
   try {
     const pub_key_bytes = hexToBytes(pub_key_hex);
     const signature_bytes = hexToBytes(proof.r + proof.s);
 
-    const message = new Uint8Array(pub_key_bytes.length + challenge_bytes.length);
+    const ts_bytes = new Uint8Array(8);
+    const view = new DataView(ts_bytes.buffer);
+    view.setBigUint64(0, BigInt(timestamp));
+
+    const message = new Uint8Array(pub_key_bytes.length + challenge_bytes.length + ts_bytes.length);
     message.set(pub_key_bytes, 0);
     message.set(challenge_bytes, pub_key_bytes.length);
+    message.set(ts_bytes, pub_key_bytes.length + challenge_bytes.length);
 
     return ed25519.verify(signature_bytes, message, pub_key_bytes);
   } catch (error) {

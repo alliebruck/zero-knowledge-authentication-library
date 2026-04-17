@@ -28,15 +28,16 @@ async function generateChallengeProofForEmail(email) {
         const { nonce } = await challengeRes.json();
         if (!nonce) throw new Error('No nonce in challenge response');
 
-        // 2. Build keys + challenge bytes
+        // 2. Build keys + challenge bytes + timestamp
         const secret_key = new Uint8Array(user.secret_key.match(/.{1,2}/g).map(b => parseInt(b, 16)));
         const pub_key = new Uint8Array(user.pub_key.match(/.{1,2}/g).map(b => parseInt(b, 16)));
         const challenge_bytes = new Uint8Array(nonce.match(/.{1,2}/g).map(b => parseInt(b, 16)));
+        const timestamp = Date.now();
 
-        // 3. Generate proof with challenge
-        const proof = generate_proof(secret_key, pub_key, challenge_bytes);
+        // 3. Generate proof with challenge and timestamp
+        const proof = generate_proof(secret_key, pub_key, challenge_bytes, timestamp);
 
-        resolve({ proof, pub_key: user.pub_key, nonce });
+        resolve({ proof, pub_key: user.pub_key, nonce, timestamp });
       } catch (e) {
         reject(e);
       }
@@ -63,16 +64,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const existing_user = users[email];
         const secret_key = new Uint8Array(existing_user.secret_key.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
         const pub_key = new Uint8Array(existing_user.pub_key.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+        const timestamp = Date.now();
         // For registration you *can* still use static proof, or also switch to challenge if you want
-        const proof = generate_proof(secret_key, pub_key, static_challenge_bytes); // Pass static challenge
-        sendResponse({ success: true, pub_key: existing_user.pub_key, proof: proof, alreadyExists: true, email: email });
+        const proof = generate_proof(secret_key, pub_key, static_challenge_bytes, timestamp); // Pass static challenge and timestamp
+        sendResponse({ success: true, pub_key: existing_user.pub_key, proof: proof, alreadyExists: true, email: email, timestamp: timestamp });
         return;
       }
 
       // If user is new, generate keys, store them, and generate a proof.
       const secret_key = create_random_key();
       const pub_key = create_pub_key(secret_key);
-      const proof = generate_proof(secret_key, pub_key, static_challenge_bytes); // Pass static challenge
+      const timestamp = Date.now();
+      const proof = generate_proof(secret_key, pub_key, static_challenge_bytes, timestamp); // Pass static challenge and timestamp
 
       const secret_key_hex = bytesToHex(secret_key);
       const pub_key_hex = bytesToHex(pub_key);
@@ -81,7 +84,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
       chrome.storage.local.set({ users: users }, () => {
         console.log(`New keypair generated and stored for ${email}.`);
-        sendResponse({ success: true, pub_key: pub_key_hex, proof: proof, alreadyExists: false, email: email });
+        sendResponse({ success: true, pub_key: pub_key_hex, proof: proof, alreadyExists: false, email: email, timestamp: timestamp });
       });
     });
     return true; // async response
@@ -109,9 +112,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     // LOGIN: challenge–response proof
     generateChallengeProofForEmail(email)
-      .then(({ proof, pub_key, nonce }) => {
+      .then(({ proof, pub_key, nonce, timestamp }) => {
         console.log(`Challenge-based proof generated for ${email}:`, proof);
-        sendResponse({ success: true, proof, pub_key, email, nonce });
+        sendResponse({ success: true, proof, pub_key, email, nonce, timestamp });
       })
       .catch(err => {
         console.error("Error generating challenge-based proof:", err);

@@ -22,16 +22,24 @@ function create_pub_key(secret_key) {
 
 /**
  * Generates a Schnorr-like proof of knowledge of the secret key.
- * This is a signature of the public key.
+ * This is a signature of the public key and a challenge, including a timestamp.
  * @param {Uint8Array} secret_key The secret key.
  * @param {Uint8Array} pub_key The public key.
+ * @param {Uint8Array} challenge_bytes The random challenge/nonce.
+ * @param {number} timestamp The timestamp in milliseconds.
  * @returns {object} The proof object containing r (as hex) and s (as hex).
  */
-function generate_proof(secret_key, pub_key, challenge_bytes) {
-    // message = H(pub_key || challenge)
-    const message = new Uint8Array(pub_key.length + challenge_bytes.length);
+function generate_proof(secret_key, pub_key, challenge_bytes, timestamp) {
+    // Convert timestamp to 8 bytes (big-endian)
+    const ts_bytes = new Uint8Array(8);
+    const view = new DataView(ts_bytes.buffer);
+    view.setBigUint64(0, BigInt(timestamp));
+
+    // message = H(pub_key || challenge || timestamp)
+    const message = new Uint8Array(pub_key.length + challenge_bytes.length + ts_bytes.length);
     message.set(pub_key, 0);
     message.set(challenge_bytes, pub_key.length);
+    message.set(ts_bytes, pub_key.length + challenge_bytes.length);
 
     const signature = ed25519.sign(message, secret_key);
     // The signature is the proof. We can split it into r and s components for clarity if needed.

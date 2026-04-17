@@ -1,0 +1,15 @@
+# Database Schema: tbl_users
+
+This table stores the core identity and Zero-Knowledge Proof (ZKP) public keys for all users in the Zynk system.
+
+CREATE TABLE tbl_users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    uid VARCHAR(255) UNIQUE,       -- The Public Key (hex) or unique Username
+    email VARCHAR(255) UNIQUE,     -- The user's email address
+    role_id INT,                   -- Role ID (1: Admin, 2: Advisor, 3: Student)
+    encrypted_key VARCHAR(3072),   -- Stores the Public Key (hex string)
+    registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Note: In the Zynk protocol, 'uid' and 'encrypted_key' are often set to 
+-- the same Public Key value during registration.

@@ -146,6 +146,30 @@ async function delete_user(connection, userId) {
 }
 
 
+async function findUserByEmailAndRole(email, roleName) {
+  const [rows] = await pool.query(
+    `SELECT u.id, u.email, u.uid AS pub_key, r.role_name
+     FROM tbl_users u
+     JOIN tbl_role r ON u.role_id = r.role_id
+     WHERE u.email = ? AND r.role_name = ?`,
+    [email, roleName]
+  );
+  return rows[0];
+}
+
+async function setUserPubKey(userId, pub_key) {
+  await pool.query(
+    'UPDATE tbl_users SET uid = ?, encrypted_key = ? WHERE id = ?',
+    [pub_key, pub_key, userId]
+  );
+  const [rows] = await pool.query(
+    'SELECT id, email, role_id, uid AS pub_key FROM tbl_users WHERE id = ?',
+    [userId]
+  );
+  return rows[0];
+}
+
+
 //task 6. write a function test_db(), which first carestse user database, inserts
 // two roles: teacher and student, and then insert two student accounts, and then call 
 // get_user() to retrieve the information of student 1 and verify if the info is correct.
@@ -154,13 +178,16 @@ async function test_db() {
     try {
         await create_user_db();
         connection = await pool.getConnection();
-        await insert_role(connection, 1, 'teacher', 'Instructor');
-        await insert_role(connection, 2, 'student', 'Learner');
-        await insert_user(connection, 1, 'student1', 2, 'key1');
-        await insert_user(connection, 2, 'student2', 2, 'key2');
-        const user1 = await get_user(connection, 1);
-        console.log(user1);
-        assert.deepStrictEqual(user1, [{ uid: 1, uname: 'student1', role_id: 2, encrypted_key: 'key1' }]);
+        await insert_role(connection, 1, 'admin', 'Administrator');
+        await insert_role(connection, 2, 'advisor', 'Faculty Advisor');
+        await insert_role(connection, 3, 'student', 'Student');
+        await insert_user(connection, 'student1_uid', 'student1@example.com', 3, 'key1');
+        await insert_user(connection, 'student2_uid', 'student2@example.com', 3, 'key2');
+        const users = await get_user(connection, 'student1_uid');
+        console.log(users);
+        assert.strictEqual(users.length, 1);
+        assert.strictEqual(users[0].uid, 'student1_uid');
+        assert.strictEqual(users[0].role_id, 3);
         console.log('Test passed!');
     } catch (err) {
         console.error('Test failed:', err);
@@ -168,6 +195,7 @@ async function test_db() {
         if (connection) connection.release();
     }
 }
+
 
 // createStudentProfile.js
 async function createStudentProfile({ user_id, major, gpa, classes, extra_info }) {
@@ -268,7 +296,6 @@ async function updateStudentProfile(userId, { major, gpa, classes, extra_info })
 }
 
 
-
 export {
   pool,
   create_user_db,
@@ -283,5 +310,8 @@ export {
   getUserWithAdvisorInfo,
   getStudentProfileByUserId,
   updateStudentProfile,
-  insert_advisor
+  insert_advisor,
+  findUserByEmailAndRole,
+  setUserPubKey
 };
+

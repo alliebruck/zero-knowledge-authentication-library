@@ -7,7 +7,7 @@ import fs from 'fs';
 const app = express();
 const port = 3000;
 import session from 'express-session';
-import { pool, get_user, insert_user, update_user, delete_user, createStudentProfile, insert_advisor, getUserWithAdvisorInfo, assignAdvisorForStudent  } from './db_ops.js';
+import { pool, get_user, insert_user, update_user, delete_user, createStudentProfile, insert_advisor, getUserWithAdvisorInfo, assignAdvisorForStudent, findUserByEmailAndRole, setUserPubKey } from './db_ops.js';
 import { verify_proof } from './zk.js';
 import { register_user, find_user_by_pub_key, find_user_by_email } from './user.js';
 import crypto from 'crypto';
@@ -75,16 +75,23 @@ app.post('/login_challenge', async (req, res) => {
 app.post('/login_zk', async (req, res) => {
   console.log("HIT /login_zk", req.body);
   console.log("Session before /login_zk:", req.session);
-  const { email, pub_key, proof, nonce } = req.body; // <--- Get nonce from body
-  if (!email || !pub_key || !proof || !nonce) { // <--- nonce is now required
-    return res.status(400).send({ message: 'Email, public key, proof, and nonce are required' });
+  const { email, pub_key, proof, nonce, timestamp } = req.body; // <--- Get nonce and timestamp from body
+  if (!email || !pub_key || !proof || !nonce || !timestamp) { // <--- timestamp is now required
+    return res.status(400).send({ message: 'Email, public key, proof, nonce, and timestamp are required' });
   }
 
   try {
+    // Freshness check: within 1 minute
+    const THRESHOLD = 60 * 1000;
+    const now = Date.now();
+    if (Math.abs(now - timestamp) > THRESHOLD) {
+      return res.status(401).send({ message: 'Timestamp expired. Replay attack detected or clock out of sync.' });
+    }
+
     const challenge_bytes = hexToBytes(nonce); // <--- Use nonce directly
 
-    console.log("Calling verify_proof with:", { pub_key, proof, challenge_bytes: bytesToHex(challenge_bytes) });
-    const is_valid = verify_proof(pub_key, proof, challenge_bytes);
+    console.log("Calling verify_proof with:", { pub_key, proof, challenge_bytes: bytesToHex(challenge_bytes), timestamp });
+    const is_valid = verify_proof(pub_key, proof, challenge_bytes, timestamp);
     if (!is_valid) {
       return res.status(401).send({ message: 'Invalid proof. Login failed.' });
     }
@@ -134,18 +141,26 @@ app.post('/register_zk', async (req, res) => {
     proof,
     email,
     name,
-    role  // we will ignore/force student for now
+    role,  // we will ignore/force student for now
+    timestamp
   } = req.body;
 
-  if (!pub_key || !proof || !email || !name) {
+  if (!pub_key || !proof || !email || !name || !timestamp) {
     return res.status(400).send({
-      message: 'Name, email, public key, and proof are required'
+      message: 'Name, email, public key, proof, and timestamp are required'
     });
   }
 
   try {
+    // Freshness check: within 5 minutes for registration (a bit more lenient)
+    const THRESHOLD = 5 * 60 * 1000;
+    const now = Date.now();
+    if (Math.abs(now - timestamp) > THRESHOLD) {
+      return res.status(401).send({ message: 'Timestamp expired. Replay attack detected or clock out of sync.' });
+    }
+
     const static_challenge_bytes = new Uint8Array(32).fill(0x01);
-    const is_valid = verify_proof(pub_key, proof, static_challenge_bytes);
+    const is_valid = verify_proof(pub_key, proof, static_challenge_bytes, timestamp);
     if (!is_valid) {
       return res.status(401).send({ message: 'Invalid proof. Registration failed.' });
     }
@@ -169,6 +184,18 @@ app.post('/register_zk', async (req, res) => {
 
       console.log('REGISTER_ZK inserted DB user:', userRow);
 
+      // 1. If user is a student (role 3), create an empty profile in the 'students' table
+      if (finalRoleId === 3) {
+        await createStudentProfile({
+          user_id: userId,
+          major: 'Undeclared',
+          gpa: 0.0,
+          classes: '[]',
+          extra_info: 'New student'
+        });
+        console.log(`Initialized student profile for UID ${userId}`);
+      }
+
       return res.status(201).send({
         message: 'User registered successfully',
         user: {
@@ -189,13 +216,21 @@ app.post('/register_zk', async (req, res) => {
 
 
 app.post('/claim_advisor', async (req, res) => {
-  const { email, pub_key, proof } = req.body;
+  const { email, pub_key, proof, timestamp } = req.body;
 
-  if (!email || !pub_key || !proof) {
-    return res.status(400).send({ message: 'Email, pub_key, and proof are required' });
+  if (!email || !pub_key || !proof || !timestamp) {
+    return res.status(400).send({ message: 'Email, pub_key, proof, and timestamp are required' });
   }
 
-  if (!verify_proof(pub_key, proof)) {
+  // Freshness check: within 5 minutes
+  const THRESHOLD = 5 * 60 * 1000;
+  const now = Date.now();
+  if (Math.abs(now - timestamp) > THRESHOLD) {
+    return res.status(401).send({ message: 'Timestamp expired.' });
+  }
+
+  const static_challenge_bytes = new Uint8Array(32).fill(0x01);
+  if (!verify_proof(pub_key, proof, static_challenge_bytes, timestamp)) {
     return res.status(401).send({ message: 'Invalid proof' });
   }
 
@@ -272,6 +307,48 @@ app.get('/me', async (req, res) => {
   }
 });
 
+app.post('/update_student_profile', async (req, res) => {
+  const currentUserId = req.session.userId;
+  if (!currentUserId) {
+    return res.status(401).send({ message: 'Not logged in' });
+  }
+
+  const { major, gpa, classes, extra_info } = req.body;
+
+  try {
+    await updateStudentProfile(currentUserId, { major, gpa, classes, extra_info });
+    return res.status(200).send({ message: 'Profile updated successfully' });
+  } catch (err) {
+    console.error('Error in /update_student_profile:', err);
+    return res.status(500).send({ message: 'Internal Server Error' });
+  }
+});
+
+app.post('/assign_advisor', async (req, res) => {
+  const currentUserId = req.session.userId;
+  if (!currentUserId) {
+    return res.status(401).send({ message: 'Not logged in' });
+  }
+
+  try {
+    const advisorUserId = await assignAdvisorForStudent(currentUserId);
+    const advisorInfo = await getUserWithAdvisorInfo(advisorUserId);
+    return res.status(200).send({
+      message: 'Advisor assigned successfully',
+      advisor: advisorInfo
+    });
+  } catch (err) {
+    console.error('Error in /assign_advisor:', err);
+    return res.status(500).send({ message: err.message || 'Internal Server Error' });
+  }
+});
+
+
+import create_user_router from './create_user.js';
+import auth_router from './auth.js';
+
+app.use(create_user_router);
+app.use(auth_router);
 
 app.get('/', (req, res) => {
   res.send('Hello World!');

@@ -56,7 +56,7 @@ function gen_auth_div(divID, success_target) {
   const messageDiv = document.getElementById(`${divID}-login-message`);
   const proofInput = document.getElementById(`${divID}-login-proof`);
 
-  ZynkWebAPI._loginHandler = async ({ success, message, email, pub_key, proof, nonce }) => {
+  ZynkWebAPI._loginHandler = async ({ success, message, email, pub_key, proof, nonce, timestamp }) => {
   if (!success) {
     const msg = message || "Could not get proof from extension.";
     messageDiv.innerText = `Login failed: ${msg}`;
@@ -71,7 +71,7 @@ function gen_auth_div(divID, success_target) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ email, pub_key, proof, nonce })
+      body: JSON.stringify({ email, pub_key, proof, nonce, timestamp })
     });
 
     const text = await response.text();
@@ -183,7 +183,7 @@ function gen_simplified_register_div(divID) {
     }
   });
 
-  ZynkWebAPI._registerHandler = async ({ success, message, email, pub_key, proof, alreadyExists }) => {
+  ZynkWebAPI._registerHandler = async ({ success, message, email, pub_key, proof, alreadyExists, timestamp }) => {
     if (!success) {
       const msg = message || "Could not get proof from extension.";
       messageDiv.innerText = `Registration failed: ${msg}`;
@@ -201,7 +201,7 @@ function gen_simplified_register_div(divID) {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ email, pub_key, proof })
+                body: JSON.stringify({ email, pub_key, proof, timestamp })
             });
 
             const text = await response.text();
@@ -232,7 +232,7 @@ function gen_simplified_register_div(divID) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name, email, role, code, pub_key, proof })
+        body: JSON.stringify({ name, email, role, code, pub_key, proof, timestamp })
       });
 
       const text = await response.text();
