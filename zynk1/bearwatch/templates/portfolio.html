@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>BearWatch — Portfolio</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='portfolio.css') }}">
+</head>
+<body>
+
+    <!-- TOP BAR -->
+    <header id="top-bar">
+        <a href="/" id="logo-link">
+            <img src="{{ url_for('static', filename='BearWatchLogo.png') }}" alt="BearWatch">
+        </a>
+        <nav id="top-nav">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/news.html" class="nav-link">News</a>
+            <a href="/agent-demo" class="nav-link">AI Agent</a>
+            <a href="/portfolio" class="nav-link active">Portfolio</a>
+            <div class="nav-divider"></div>
+            <a href="/logout" class="nav-link nav-muted">↩ {{ current_user.name }}</a>
+            <button class="nav-btn" id="dark-mode-btn" title="Toggle dark mode">◑</button>
+        </nav>
+    </header>
+
+    <!-- SUMMARY CARDS -->
+    <div id="summary-bar">
+        <div class="summary-card">
+            <div class="card-label">Cash Balance</div>
+            <div class="card-value">${{ "%.2f"|format(current_user.balance) }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="card-label">Invested Value</div>
+            <div class="card-value">${{ "%.2f"|format(total_market_value) }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="card-label">Total Portfolio</div>
+            <div class="card-value large">${{ "%.2f"|format(total_value) }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="card-label">Unrealized P&L</div>
+            <div class="card-value {{ 'pos' if total_pnl >= 0 else 'neg' }}">
+                {{ '+' if total_pnl >= 0 else '-' }}${{ "%.2f"|format(total_pnl|abs) }}
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div id="main-content">
+
+        <!-- AI AGENT -->
+        <div id="agent-section">
+            <div>
+                {% if current_user.email.endswith('@zync.ai') %}
+                <h2>AI Agent Account</h2>
+                <p id="agent-copy">Ask OpenAI to place another paper trade in this same agent account.</p>
+                {% else %}
+                <h2>AI Paper Agent</h2>
+                <p id="agent-copy">Watch OpenAI create a fake agent account and choose a paper trade.</p>
+                {% endif %}
+            </div>
+            {% if current_user.email.endswith('@zync.ai') %}
+            <button id="agent-run-btn" type="button" data-agent-id="{{ current_user.id }}">Trade More With OpenAI</button>
+            {% else %}
+            <a id="agent-demo-link" href="/agent-demo">Watch AI Agent Trade</a>
+            {% endif %}
+            {% if latest_ai_decision %}
+            <div id="ai-decision-line">
+                <span>OpenAI decision</span>
+                <strong>{{ latest_ai_decision.ai_model }}</strong>
+                <span>{{ latest_ai_decision.shares|round(4) }} share(s) of {{ latest_ai_decision.ticker }}: {{ latest_ai_decision.ai_reason }}</span>
+            </div>
+            {% endif %}
+            <div id="agent-result" hidden></div>
+        </div>
+
+        <!-- HOLDINGS -->
+        <div id="holdings-section">
+            <h2>Holdings</h2>
+            {% if holdings %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ticker</th>
+                        <th>Shares</th>
+                        <th>Avg Cost</th>
+                        <th>Current Price</th>
+                        <th>Market Value</th>
+                        <th>P&L</th>
+                        <th>P&L %</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in holdings %}
+                    <tr>
+                        <td><a href="/stock?stock={{ h.ticker }}" class="ticker-link">{{ h.ticker }}</a></td>
+                        <td>{{ "%.4f"|format(h.shares) }}</td>
+                        <td>${{ "%.2f"|format(h.avg_price) }}</td>
+                        <td>${{ "%.2f"|format(h.current_price) }}</td>
+                        <td>${{ "%.2f"|format(h.market_value) }}</td>
+                        <td class="{{ 'pos' if h.pnl >= 0 else 'neg' }}">
+                            {{ '+' if h.pnl >= 0 else '-' }}${{ "%.2f"|format(h.pnl|abs) }}
+                        </td>
+                        <td class="{{ 'pos' if h.pnl_pct >= 0 else 'neg' }}">
+                            {{ '%+.2f'|format(h.pnl_pct) }}%
+                        </td>
+                        <td>
+                            <a href="/stock?stock={{ h.ticker }}" class="trade-action-link">Trade ›</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                No holdings yet. <a href="/">Search for a stock</a> to start trading.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- TRADE HISTORY -->
+        <div id="history-section">
+            <h2>Recent Trades</h2>
+            {% if recent_trades %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Ticker</th>
+                        <th>Action</th>
+                        <th>Shares</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                        <th>AI Decision</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in recent_trades %}
+                    <tr>
+                        <td style="color:var(--text-muted);font-size:13px;">
+                            {{ t.created_at[:16] if t.created_at else '' }}
+                        </td>
+                        <td><a href="/stock?stock={{ t.ticker }}" class="ticker-link">{{ t.ticker }}</a></td>
+                        <td class="{{ 'pos' if t.action == 'sell' else 'neg' }}">{{ t.action|upper }}</td>
+                        <td>{{ "%.4f"|format(t.shares) }}</td>
+                        <td>${{ "%.2f"|format(t.price) }}</td>
+                        <td class="{{ 'neg' if t.action == 'buy' else 'pos' }}">
+                            {{ '-' if t.action == 'buy' else '+' }}${{ "%.2f"|format(t.total) }}
+                        </td>
+                        <td class="ai-reason-cell">
+                            {% if t.ai_reason %}
+                            {{ t.ai_model }} · {{ t.ai_reason }}
+                            {% else %}
+                            —
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">No trades yet.</div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <script>
+    window.addEventListener('DOMContentLoaded', () => {
+        const darkBtn = document.getElementById('dark-mode-btn');
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            darkBtn.classList.add('active');
+        }
+        darkBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const on = document.body.classList.contains('dark-mode');
+            darkBtn.classList.toggle('active', on);
+            localStorage.setItem('darkMode', on);
+        });
+
+        const runBtn = document.getElementById('agent-run-btn');
+        const result = document.getElementById('agent-result');
+        if (!runBtn) return;
+        runBtn.addEventListener('click', async () => {
+            runBtn.disabled = true;
+            result.hidden = false;
+            result.className = '';
+            result.textContent = 'Asking OpenAI for another paper trade...';
+
+            try {
+                const response = await fetch('/api/agent/openai-trade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        agent_id: Number(runBtn.dataset.agentId)
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Agent trade failed');
+                }
+
+                result.className = 'success';
+                result.textContent = `${data.message} Refreshing portfolio...`;
+                window.setTimeout(() => window.location.reload(), 900);
+            } catch (error) {
+                result.className = 'error';
+                result.textContent = error.message;
+            } finally {
+                runBtn.disabled = false;
+            }
+        });
+    });
+    </script>
+</body>
+</html>

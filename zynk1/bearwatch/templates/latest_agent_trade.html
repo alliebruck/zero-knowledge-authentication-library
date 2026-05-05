@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>BearWatch - Latest Agent Trade</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='portfolio.css') }}">
+    <style>
+        .agent-demo-wrap {
+            max-width: 980px;
+            margin: 120px auto 48px;
+            padding: 0 24px;
+        }
+
+        .agent-demo-header {
+            margin-bottom: 24px;
+        }
+
+        .agent-demo-header h1 {
+            margin: 0 0 8px;
+            color: var(--text-main);
+            font-size: 32px;
+        }
+
+        .agent-demo-header p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        .agent-trade-card {
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .agent-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(46, 160, 67, 0.12);
+            color: #1f7a35;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        .agent-status.empty {
+            background: rgba(147, 111, 36, 0.12);
+            color: #8a6200;
+        }
+
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .agent-metric {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            background: var(--page-bg);
+        }
+
+        .agent-label {
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .agent-value {
+            color: var(--text-main);
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 6px;
+            overflow-wrap: anywhere;
+        }
+
+        .agent-table {
+            width: 100%;
+            margin-top: 24px;
+        }
+
+        .agent-refresh {
+            margin-top: 18px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        @media (max-width: 800px) {
+            .agent-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 520px) {
+            .agent-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header id="top-bar">
+        <a href="/" id="logo-link">
+            <img src="{{ url_for('static', filename='BearWatchLogo.png') }}" alt="BearWatch">
+        </a>
+        <nav id="top-nav">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/news.html" class="nav-link">News</a>
+            <a href="/portfolio" class="nav-link">Portfolio</a>
+            <a href="/latest-agent-trade" class="nav-link active">Agent Demo</a>
+            {% if current_user %}
+            <div class="nav-divider"></div>
+            <a href="/logout" class="nav-link nav-muted">↩ {{ current_user.name }}</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="agent-demo-wrap">
+        <section class="agent-demo-header">
+            <h1>Latest AI Agent Trade</h1>
+            <p>This page shows the newest paper trade created by the stock agent.</p>
+        </section>
+
+        <section class="agent-trade-card">
+            {% if trade %}
+            <div class="agent-status">Agent trade recorded</div>
+            <div class="agent-grid">
+                <div class="agent-metric">
+                    <div class="agent-label">Agent Account</div>
+                    <div class="agent-value">{{ trade.email }}</div>
+                </div>
+                <div class="agent-metric">
+                    <div class="agent-label">Action</div>
+                    <div class="agent-value">{{ trade.action|upper }} {{ trade.ticker }}</div>
+                </div>
+                <div class="agent-metric">
+                    <div class="agent-label">Shares</div>
+                    <div class="agent-value">{{ "%.4f"|format(trade.shares) }}</div>
+                </div>
+                <div class="agent-metric">
+                    <div class="agent-label">Remaining Cash</div>
+                    <div class="agent-value">${{ "%.2f"|format(trade.balance) }}</div>
+                </div>
+            </div>
+
+            <table class="agent-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                        <th>Holdings After Trade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ trade.created_at[:16] if trade.created_at else '' }}</td>
+                        <td>${{ "%.2f"|format(trade.price) }}</td>
+                        <td>${{ "%.2f"|format(trade.total) }}</td>
+                        <td>
+                            {% if holdings %}
+                                {% for holding in holdings %}
+                                    {{ holding.ticker }}: {{ "%.4f"|format(holding.shares) }} shares{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                No current holdings
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            {% else %}
+            <div class="agent-status empty">Waiting for agent trade</div>
+            <div class="empty-state" style="margin-top:20px;">
+                Run the stock-agent command, then this page will update with the latest paper trade.
+            </div>
+            {% endif %}
+            <div class="agent-refresh">This demo page refreshes every 5 seconds.</div>
+        </section>
+    </main>
+
+    <script>
+        setTimeout(() => window.location.reload(), 5000);
+    </script>
+</body>
+</html>

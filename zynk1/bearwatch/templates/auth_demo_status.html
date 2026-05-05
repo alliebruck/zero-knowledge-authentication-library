@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>BearWatch - Zynk Proof Status</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='portfolio.css') }}">
+    <style>
+        .proof-wrap {
+            max-width: 980px;
+            margin: 120px auto 48px;
+            padding: 0 24px;
+        }
+
+        .proof-header {
+            margin-bottom: 24px;
+        }
+
+        .proof-header h1 {
+            margin: 0 0 8px;
+            color: var(--text-main);
+            font-size: 32px;
+        }
+
+        .proof-header p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        .proof-card {
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .proof-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(46, 160, 67, 0.12);
+            color: #1f7a35;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        .proof-status.empty {
+            background: rgba(147, 111, 36, 0.12);
+            color: #8a6200;
+        }
+
+        .proof-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .proof-metric {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            background: var(--page-bg);
+        }
+
+        .proof-label {
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .proof-value {
+            color: var(--text-main);
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 6px;
+            overflow-wrap: anywhere;
+        }
+
+        .proof-value.large {
+            font-size: 22px;
+        }
+
+        .proof-table {
+            width: 100%;
+            margin-top: 24px;
+        }
+
+        .proof-refresh {
+            margin-top: 18px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        @media (max-width: 800px) {
+            .proof-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 520px) {
+            .proof-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header id="top-bar">
+        <a href="/" id="logo-link">
+            <img src="{{ url_for('static', filename='BearWatchLogo.png') }}" alt="BearWatch">
+        </a>
+        <nav id="top-nav">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/news.html" class="nav-link">News</a>
+            {% if current_user %}
+            <a href="/portfolio" class="nav-link">Portfolio</a>
+            <div class="nav-divider"></div>
+            <a href="/logout" class="nav-link nav-muted">↩ {{ current_user.name }}</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="proof-wrap">
+        <section class="proof-header">
+            <h1>Zynk Proof Status</h1>
+            <p>This page shows the latest server-verified authentication proof.</p>
+        </section>
+
+        <section class="proof-card">
+            {% if event %}
+            <div class="proof-status">Proof verified</div>
+            <div class="proof-grid">
+                <div class="proof-metric">
+                    <div class="proof-label">Actor</div>
+                    <div class="proof-value large">{{ event.actor }}</div>
+                </div>
+                <div class="proof-metric">
+                    <div class="proof-label">Action</div>
+                    <div class="proof-value large">{{ event.action|upper }}</div>
+                </div>
+                <div class="proof-metric">
+                    <div class="proof-label">Session Created</div>
+                    <div class="proof-value large">{{ 'YES' if event.session_created else 'NO' }}</div>
+                </div>
+                <div class="proof-metric">
+                    <div class="proof-label">Email</div>
+                    <div class="proof-value">{{ event.email }}</div>
+                </div>
+                <div class="proof-metric">
+                    <div class="proof-label">Public Key</div>
+                    <div class="proof-value">{{ event.pub_key_preview }}</div>
+                </div>
+                <div class="proof-metric">
+                    <div class="proof-label">Server Challenge</div>
+                    <div class="proof-value">{{ event.challenge_preview }}</div>
+                </div>
+                <div class="proof-metric">
+                    <div class="proof-label">Timestamp</div>
+                    <div class="proof-value">{{ event.timestamp }}</div>
+                </div>
+                <div class="proof-metric">
+                    <div class="proof-label">Challenge Consumed</div>
+                    <div class="proof-value">{{ 'YES' if event.challenge_consumed else 'NO' }}</div>
+                </div>
+                <div class="proof-metric">
+                    <div class="proof-label">Verified At</div>
+                    <div class="proof-value">{{ event.created_at }}</div>
+                </div>
+            </div>
+
+            <table class="proof-table">
+                <thead>
+                    <tr>
+                        <th>Proof Part</th>
+                        <th>Preview</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>r</td>
+                        <td>{{ event.proof_preview.r }}</td>
+                    </tr>
+                    <tr>
+                        <td>s</td>
+                        <td>{{ event.proof_preview.s }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% else %}
+            <div class="proof-status empty">Waiting for proof</div>
+            <div class="empty-state" style="margin-top:20px;">
+                Register, log in, or run the stock agent to show the latest verified proof here.
+            </div>
+            {% endif %}
+            <div class="proof-refresh">This demo page refreshes every 5 seconds.</div>
+        </section>
+    </main>
+
+    <script>
+        setTimeout(() => window.location.reload(), 5000);
+    </script>
+</body>
+</html>

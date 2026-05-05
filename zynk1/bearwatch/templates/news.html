@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>BearWatch — News</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='news.css') }}">
+</head>
+<body>
+
+    <!-- TOP BAR -->
+    <header id="top-bar">
+        <a href="/" id="logo-link">
+            <img src="{{ url_for('static', filename='BearWatchLogo.png') }}" alt="BearWatch">
+        </a>
+        <div id="search-wrap">
+            <form id="search-form" method="GET" action="/news.html">
+                <div class="search-row">
+                    <div class="search-input-wrap">
+                        <input class="search-input" id="query" name="query" type="text"
+                               placeholder="Search news or a stock symbol…"
+                               value="{{ request.form.get('query', request.args.get('query', '')) }}"
+                               data-default="Stock Market" autocomplete="off">
+                        <div id="suggestions" class="suggestions-box"></div>
+                    </div>
+                    <select id="search-type" class="search-type">
+                        <option value="news">News</option>
+                        <option value="stock">Stock</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        <nav id="top-nav">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/news.html" class="nav-link active">News</a>
+            {% if current_user %}
+            <div class="nav-divider"></div>
+            <a href="/portfolio" class="nav-link">Portfolio</a>
+            <a href="/logout" class="nav-link nav-muted">↩ {{ current_user.name }}</a>
+            {% else %}
+            <div class="nav-divider"></div>
+            <a href="/login" class="nav-pill">Login</a>
+            {% endif %}
+            <button class="nav-btn" id="dark-mode-btn" title="Toggle dark mode">◑</button>
+        </nav>
+    </header>
+
+    <!-- HEADING -->
+    <div id="newsHeadline">
+        <h2>Latest Stock Market News</h2>
+    </div>
+
+    <!-- GRID -->
+    <div id="newsGrid">
+        {% for article in news %}
+        <a href="{{ article.article_url }}">
+            <div class="news-item">
+                {% if article.image %}
+                <img src="{{ article.image }}" alt="">
+                {% else %}
+                <div style="width:100%;height:160px;background:var(--bg-panel);"></div>
+                {% endif %}
+                <p>{{ article.title }}</p>
+                {% if article.publisher %}
+                <span style="font-size:11px;color:var(--text-muted);padding:0 14px 12px;display:block;">{{ article.publisher }}{% if article.date %} · {{ article.date }}{% endif %}</span>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- LOAD MORE -->
+    <div id="loadMoreContainer">
+        <button id="loadMoreButton">Load More</button>
+    </div>
+
+    <script>
+    window.addEventListener('DOMContentLoaded', () => {
+        const queryInput  = document.getElementById('query');
+        const searchType  = document.getElementById('search-type');
+        const suggestions = document.getElementById('suggestions');
+        const form        = document.getElementById('search-form');
+        const darkBtn     = document.getElementById('dark-mode-btn');
+        const loadMore    = document.getElementById('loadMoreButton');
+        let offset = 8;
+
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            darkBtn.classList.add('active');
+        }
+
+        darkBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const on = document.body.classList.contains('dark-mode');
+            darkBtn.classList.toggle('active', on);
+            localStorage.setItem('darkMode', on);
+        });
+
+        searchType.addEventListener('change', () => {
+            if (searchType.value === 'news') {
+                form.action = '/news.html';
+                form.method = 'POST';
+                queryInput.placeholder = 'Search news…';
+                queryInput.name = 'query';
+                suggestions.style.display = 'none';
+                suggestions.innerHTML = '';
+            } else {
+                form.action = '/stock';
+                form.method = 'GET';
+                queryInput.placeholder = 'Search stock symbol…';
+                queryInput.name = 'stock';
+            }
+        });
+
+        queryInput.addEventListener('input', async () => {
+            if (searchType.value !== 'stock') {
+                suggestions.style.display = 'none'; suggestions.innerHTML = ''; return;
+            }
+            const q = queryInput.value.trim();
+            if (!q) { suggestions.style.display = 'none'; suggestions.innerHTML = ''; return; }
+            try {
+                const data = await fetch(`/autocomplete_stock?query=${q}`).then(r => r.json());
+                suggestions.innerHTML = '';
+                if (!data.length) { suggestions.style.display = 'none'; return; }
+                data.forEach(item => {
+                    const d = document.createElement('div');
+                    d.className = 'suggestion';
+                    d.textContent = `${item.name} (${item.symbol})`;
+                    d.addEventListener('click', () => {
+                        queryInput.value = item.symbol;
+                        suggestions.style.display = 'none';
+                        form.submit();
+                    });
+                    suggestions.appendChild(d);
+                });
+                suggestions.style.display = 'block';
+            } catch {}
+        });
+
+        queryInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && searchType.value === 'stock') {
+                const first = suggestions.querySelector('.suggestion');
+                if (first) {
+                    e.preventDefault();
+                    const m = first.textContent.match(/\(([^)]+)\)/);
+                    if (m) { queryInput.value = m[1]; form.submit(); }
+                }
+            }
+        });
+
+        document.addEventListener('click', e => {
+            if (!suggestions.contains(e.target) && e.target !== queryInput)
+                suggestions.style.display = 'none';
+        });
+
+        loadMore.addEventListener('click', () => {
+            const q = encodeURIComponent(queryInput.value.trim() || queryInput.dataset.default);
+            fetch(`/load_more_news?query=${q}&offset=${offset}`)
+                .then(r => r.json())
+                .then(data => {
+                    const grid = document.getElementById('newsGrid');
+                    data.forEach(a => {
+                        const link = document.createElement('a');
+                        link.href = a.article_url || a.link;
+                        const imgHtml = a.image
+                            ? `<img src="${a.image}" alt="">`
+                            : `<div style="width:100%;height:160px;background:var(--bg-panel);"></div>`;
+                        const metaHtml = a.publisher
+                            ? `<span style="font-size:11px;color:var(--text-muted);padding:0 14px 12px;display:block;">${a.publisher}${a.date ? ' · ' + a.date : ''}</span>`
+                            : '';
+                        link.innerHTML = `<div class="news-item">${imgHtml}<p>${a.title}</p>${metaHtml}</div>`;
+                        grid.appendChild(link);
+                    });
+                    offset += data.length;
+                })
+                .catch(() => {});
+        });
+    });
+    </script>
+</body>
+</html>

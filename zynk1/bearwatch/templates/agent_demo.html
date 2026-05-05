@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>BearWatch — AI Agent Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='agent_demo.css') }}">
+</head>
+<body>
+    <header id="top-bar">
+        <a href="/" id="logo-link">
+            <img src="{{ url_for('static', filename='BearWatchLogo.png') }}" alt="BearWatch">
+        </a>
+        <nav id="top-nav">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/news.html" class="nav-link">News</a>
+            <a href="/agent-demo" class="nav-link active">AI Agent</a>
+            <a href="/portfolio" class="nav-link">Portfolio</a>
+            <div class="nav-divider"></div>
+            {% if current_user %}
+            <a href="/logout" class="nav-link nav-muted">{{ current_user.name }}</a>
+            {% else %}
+            <a href="/demo-login" class="nav-link nav-muted">Demo Login</a>
+            {% endif %}
+            <button class="nav-btn" id="dark-mode-btn" title="Toggle dark mode">◑</button>
+        </nav>
+    </header>
+
+    <main id="agent-demo-shell">
+        <section id="agent-panel">
+            <div id="agent-header">
+                <div>
+                    <h1>Watch AI Agent Trade</h1>
+                    <p>Create a fake agent account, ask OpenAI to choose a paper trade, then open the exact portfolio it used.</p>
+                </div>
+                <button id="run-demo-btn" type="button">Run AI Agent</button>
+            </div>
+
+            <ol id="agent-steps">
+                <li data-step="account">Waiting to create fake AI account</li>
+                <li data-step="balance">Waiting to check paper balance</li>
+                <li data-step="openai">Waiting to ask OpenAI for a trade decision</li>
+                <li data-step="trade">Waiting to place OpenAI's paper trade</li>
+                <li data-step="done">Waiting to save holdings and trade history</li>
+            </ol>
+
+            <div id="agent-output" hidden></div>
+        </section>
+    </main>
+
+    <script>
+    function setStep(name, state, text) {
+        const item = document.querySelector(`[data-step="${name}"]`);
+        item.className = state;
+        item.textContent = text;
+    }
+
+    function delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const darkBtn = document.getElementById('dark-mode-btn');
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            darkBtn.classList.add('active');
+        }
+        darkBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const on = document.body.classList.contains('dark-mode');
+            darkBtn.classList.toggle('active', on);
+            localStorage.setItem('darkMode', on);
+        });
+
+        const runBtn = document.getElementById('run-demo-btn');
+        const output = document.getElementById('agent-output');
+
+        runBtn.addEventListener('click', async () => {
+            runBtn.disabled = true;
+            output.hidden = true;
+            output.replaceChildren();
+            setStep('account', 'active', 'Creating fake AI stock account...');
+            setStep('balance', '', 'Waiting to check paper balance');
+            setStep('openai', '', 'Waiting to ask OpenAI for a trade decision');
+            setStep('trade', '', "Waiting to place OpenAI's paper trade");
+            setStep('done', '', 'Waiting to save holdings and trade history');
+
+            try {
+                const accountResponse = await fetch('/api/agent/create-account', { method: 'POST' });
+                const account = await accountResponse.json();
+                if (!accountResponse.ok || !account.success) {
+                    throw new Error(account.error || 'Could not create agent account');
+                }
+                setStep('account', 'done', `Created account: ${account.agent.email}`);
+
+                await delay(450);
+                setStep('balance', 'active', `Checking paper balance: $${Number(account.agent.balance).toFixed(2)}`);
+
+                await delay(450);
+                setStep('balance', 'done', `Paper balance confirmed: $${Number(account.agent.balance).toFixed(2)}`);
+                setStep('openai', 'active', 'Asking OpenAI to choose a guarded paper trade...');
+
+                const tradeResponse = await fetch('/api/agent/openai-trade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        agent_id: account.agent.id
+                    })
+                });
+                const trade = await tradeResponse.json();
+                if (!tradeResponse.ok || !trade.success) {
+                    throw new Error(trade.error || 'Agent trade failed');
+                }
+
+                setStep('openai', 'done', `OpenAI chose ${trade.decision.shares} share(s) of ${trade.decision.ticker}: ${trade.decision.reason}`);
+                setStep('trade', 'done', trade.message);
+                setStep('done', 'done', `Saved to ${trade.agent.email}. Remaining cash: $${Number(trade.trade.new_balance).toFixed(2)}`);
+
+                const message = document.createElement('p');
+                message.textContent = `${trade.agent.email} now owns ${trade.trade.shares} share(s) of ${trade.trade.ticker}. Model: ${trade.decision.model}.`;
+                const portfolioLink = document.createElement('a');
+                portfolioLink.className = 'result-btn';
+                portfolioLink.href = trade.portfolio_url;
+                portfolioLink.textContent = 'View Agent Portfolio';
+                const latestLink = document.createElement('a');
+                latestLink.className = 'result-link';
+                latestLink.href = trade.latest_url;
+                latestLink.textContent = 'View Latest Agent Trade';
+                output.append(message, portfolioLink, latestLink);
+                output.hidden = false;
+            } catch (error) {
+                const active = document.querySelector('#agent-steps .active');
+                if (active) active.className = 'error';
+                output.hidden = false;
+                output.textContent = error.message;
+            } finally {
+                runBtn.disabled = false;
+            }
+        });
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+/* login.css — standalone page; design tokens are defined inline via :root override */
+
+:root {
+    --bg:         #F9F5ED;
+    --bg-panel:   #f0ede7;
+    --bg-card:    #ffffff;
+    --text:       #311f6b;
+    --text-muted: #7a6aaa;
+    --text-inv:   #F9F5ED;
+    --accent:     #311f6b;
+    --accent-h:   #4a2fa0;
+    --border:     #ddd8cc;
+    --shadow:     rgba(49, 31, 107, 0.07);
+    --green:      #2e7d32;
+    --red:        #c62828;
+    --radius-s:   8px;
+    --radius-m:   10px;
+    --radius-l:   14px;
+    --font:       Cambria, Georgia, serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    font-family: var(--font);
+    background-color: var(--bg);
+    color: var(--text);
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* ── Card ── */
+#login-container { width: 100%; max-width: 460px; }
+
+#login-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 4px 24px var(--shadow);
+}
+
+/* ── Brand ── */
+#brand {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+#brand img {
+    height: 44px;
+    width: auto;
+}
+
+.subtitle {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin: 6px 0 0;
+    letter-spacing: 0.5px;
+}
+
+/* ── Tabs ── */
+#auth-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 24px;
+}
+
+.tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    padding: 10px;
+    font-family: var(--font);
+    font-size: 15px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.18s, border-color 0.18s;
+}
+
+.tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 700;
+}
+
+.tab-panel.hidden { display: none; }
+
+/* ── Extension notice ── */
+.extension-notice {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-s);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 16px;
+    line-height: 1.5;
+}
+
+/* ── Form ── */
+.form-group { margin-bottom: 16px; }
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px 13px;
+    font-size: 15px;
+    font-family: var(--font);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-m);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.18s;
+}
+
+.form-group input:focus {
+    border-color: var(--accent);
+}
+
+/* ── Primary button ── */
+.btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: var(--text-inv);
+    border: none;
+    border-radius: var(--radius-m);
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.18s;
+    margin-top: 4px;
+}
+
+.btn-primary:hover    { background: var(--accent-h); }
+.btn-primary:disabled { background: var(--text-muted); cursor: not-allowed; }
+
+/* ── Messages ── */
+.message {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: var(--radius-s);
+    font-size: 14px;
+    text-align: center;
+}
+
+.message.hidden  { display: none; }
+.message.success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+.message.error   { background: #fce4ec; color: #c62828; border: 1px solid #ef9a9a; }
+
+/* ── Footer info ── */
+#zk-info {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+}
+
+#zk-info p { margin: 3px 0; }

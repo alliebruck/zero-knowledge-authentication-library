@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>{{ stock_symbol }} — BearWatch</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='stock.css') }}">
+</head>
+<body>
+
+    <!-- TOP BAR -->
+    <header id="top-bar">
+        <a href="/" id="logo-link">
+            <img src="{{ url_for('static', filename='BearWatchLogo.png') }}" alt="BearWatch">
+        </a>
+        <div id="search-wrap">
+            <form id="search-form" action="{{ url_for('stock') }}" method="GET">
+                <div class="search-inner">
+                    <input class="search-input" id="stock-input" name="stock" type="text"
+                           placeholder="Search stocks…" value="{{ stock_symbol }}" autocomplete="off">
+                    <div id="suggestions" class="suggestions-box"></div>
+                </div>
+            </form>
+        </div>
+        <nav id="top-nav">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/news.html" class="nav-link">News</a>
+            {% if current_user %}
+            <div class="nav-divider"></div>
+            <a href="/portfolio" class="nav-link">Portfolio</a>
+            <a href="/logout" class="nav-link nav-muted">↩ {{ current_user.name }}</a>
+            {% else %}
+            <div class="nav-divider"></div>
+            <a href="/login" class="nav-pill">Login</a>
+            {% endif %}
+            <button class="nav-btn" id="dark-mode-btn" title="Toggle dark mode">◑</button>
+            <button class="nav-btn" id="colorblind-btn" title="Toggle colorblind mode">◉</button>
+        </nav>
+    </header>
+
+    <!-- NEWS TICKER -->
+    <div id="news-ticker">
+        <div id="ticker-text">
+            {% for article in ticker_news %}
+            <a href="{{ article.link }}" target="_blank" rel="noopener">{{ article.title }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- CHART -->
+    <div id="graph">
+        <iframe id="stock-graph" src="/dashboard?stock={{ stock_symbol }}" style="border:none;"></iframe>
+    </div>
+
+    <!-- TIME BUTTONS -->
+    <div id="time-buttons">
+        <button class="time-btn" data-value="1d">1D</button>
+        <button class="time-btn" data-value="5d">1W</button>
+        <button class="time-btn" data-value="1mo">1M</button>
+        <button class="time-btn" data-value="3mo">3M</button>
+        <button class="time-btn" data-value="ytd">YTD</button>
+        <button class="time-btn" data-value="1y">1Y</button>
+        <button class="time-btn" data-value="max">ALL</button>
+    </div>
+
+    <!-- TRADE PANEL -->
+    <div id="trade-panel">
+        {% if current_user %}
+        <div id="trade-panel-inner">
+            <div id="trade-balance">
+                <span class="trade-label">Cash Balance</span>
+                <span class="trade-value" id="user-balance">${{ "%.2f"|format(current_user.balance) }}</span>
+            </div>
+            <div id="trade-position">
+                <span class="trade-label">Your Position</span>
+                {% if user_position %}
+                <span class="trade-value">
+                    {{ "%.4f"|format(user_position.shares) }} shares @ ${{ "%.2f"|format(user_position.avg_price) }}
+                </span>
+                {% else %}
+                <span class="trade-value" style="color:var(--text-muted);font-weight:normal;">No position</span>
+                {% endif %}
+            </div>
+            <div id="trade-actions">
+                <button class="trade-btn buy-btn"  onclick="openTradeModal('buy')">Buy</button>
+                <button class="trade-btn sell-btn" onclick="openTradeModal('sell')">Sell</button>
+            </div>
+        </div>
+        {% else %}
+        <div id="trade-panel-inner" style="justify-content:center;">
+            <a href="/login" class="trade-btn buy-btn" style="text-decoration:none;text-align:center;">
+                Login to Trade
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- RELATED STOCKS -->
+    <div id="related-stocks">
+        <h2>Related</h2>
+        {% if related_stocks %}
+        {% for s in related_stocks %}
+        <button type="button" class="stock-btn" onclick="location.href='/stock?stock={{ s.ticker }}'">
+            <div>
+                <span class="stock-btn-ticker">{{ s.ticker }}</span>
+                <span class="stock-btn-price">${{ "%.2f"|format(s.price) if s.price != 'N/A' else 'N/A' }}</span>
+            </div>
+            {% if s.change != 'N/A' %}
+            <span class="change-badge {{ 'positive-change' if s.change > 0 else 'negative-change' }}">
+                {{ '%+.2f'|format(s.change) }}%
+            </span>
+            {% endif %}
+        </button>
+        {% endfor %}
+        {% else %}
+        <p style="color:var(--text-muted);font-size:13px;">None found.</p>
+        {% endif %}
+    </div>
+
+    <!-- TRENDING -->
+    <div id="trending">
+        <h2>Trending</h2>
+        {% if trending_stocks %}
+        {% for s in trending_stocks %}
+        <button type="button" class="stock-btn" onclick="location.href='/stock?stock={{ s.ticker }}'">
+            <div>
+                <span class="stock-btn-ticker">{{ s.ticker }}</span>
+                <span class="stock-btn-price">${{ "%.2f"|format(s.price) if s.price != 'N/A' else 'N/A' }}</span>
+            </div>
+            {% if s.change != 'N/A' %}
+            <span class="change-badge {{ 'positive-change' if s.change > 0 else 'negative-change' }}">
+                {{ '%+.2f'|format(s.change) }}%
+            </span>
+            {% endif %}
+        </button>
+        {% endfor %}
+        {% else %}
+        <p style="color:var(--text-muted);font-size:13px;">No trending stocks.</p>
+        {% endif %}
+    </div>
+
+    <!-- HEADLINES -->
+    <div id="headlines">
+        <h2><a href="/news.html">Headlines</a></h2>
+        <ul>
+            {% for article in stock_news %}
+            <li><a href="{{ article.link }}" target="_blank" rel="noopener">{{ article.title }}</a></li>
+            <img src="{{ article.image }}" alt="" class="headline-img">
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- STOCK OVERVIEW + ABOUT -->
+    <div id="info-stats-container">
+        <div id="information">
+            <h2>{{ stock_symbol }} Overview</h2>
+            {% if stock_overview %}
+            <table id="overview-table">
+                <tbody>
+                    {% for key, value in stock_overview.items() %}
+                    <tr>
+                        <td><strong>{{ key }}</strong></td>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="color:var(--text-muted);">No overview available.</p>
+            {% endif %}
+        </div>
+        <div id="stats">
+            <h2>About {{ stock_symbol }}</h2>
+            {% if stock_about %}
+                {% if "[Read more]" in stock_about %}
+                    {% set parts = stock_about.split('[Read more]') %}
+                    <p>{{ parts[0] }}
+                        <a href="https://stockanalysis.com/stocks/{{ stock_symbol|lower }}/company/"
+                           target="_blank" rel="noopener" style="color:var(--accent);">[Read More]</a>
+                    </p>
+                {% else %}
+                    <p>{{ stock_about }}</p>
+                {% endif %}
+            {% else %}
+            <p style="color:var(--text-muted);">No description available.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- TRADE MODAL -->
+    <div id="trade-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3 id="modal-title">Buy {{ stock_symbol }}</h3>
+            <div class="modal-row">
+                <span>Current Price</span>
+                <span id="modal-price">Loading…</span>
+            </div>
+            <div class="modal-row">
+                <span>Your Balance</span>
+                <span id="modal-balance">${{ "%.2f"|format(current_user.balance if current_user else 0) }}</span>
+            </div>
+            <div class="modal-row">
+                <label for="modal-shares">Shares</label>
+                <input type="number" id="modal-shares" min="0.001" step="0.001" value="1">
+            </div>
+            <div class="modal-row quick-amounts">
+                <span>Quick:</span>
+                <button onclick="setShares(1)">1</button>
+                <button onclick="setShares(5)">5</button>
+                <button onclick="setShares(10)">10</button>
+            </div>
+            <div class="modal-row total-row">
+                <span>Estimated Total</span>
+                <span id="modal-total">$0.00</span>
+            </div>
+            <div class="modal-actions">
+                <button class="trade-btn" id="modal-confirm" onclick="confirmTrade()">Buy</button>
+                <button class="trade-btn cancel-btn" onclick="closeModal()">Cancel</button>
+            </div>
+            <div id="modal-message" class="modal-message hidden"></div>
+        </div>
+    </div>
+
+    <!-- TRADE LOGIC -->
+    <script>
+    const TICKER = '{{ stock_symbol }}';
+    let tradeAction = 'buy';
+    let livePrice = 0;
+
+    async function fetchPrice() {
+        try {
+            const d = await fetch(`/api/price/${TICKER}`).then(r => r.json());
+            if (d.price) {
+                livePrice = d.price;
+                document.getElementById('modal-price').textContent = '$' + d.price.toFixed(2);
+                updateTotal();
+            }
+        } catch {}
+    }
+
+    function setShares(n) {
+        document.getElementById('modal-shares').value = n;
+        updateTotal();
+    }
+
+    function updateTotal() {
+        const s = parseFloat(document.getElementById('modal-shares').value) || 0;
+        document.getElementById('modal-total').textContent = '$' + (s * livePrice).toFixed(2);
+    }
+
+    function openTradeModal(action) {
+        tradeAction = action;
+        document.getElementById('modal-title').textContent = (action === 'buy' ? 'Buy ' : 'Sell ') + TICKER;
+        const btn = document.getElementById('modal-confirm');
+        btn.textContent = action === 'buy' ? 'Buy' : 'Sell';
+        btn.className = 'trade-btn ' + (action === 'buy' ? 'buy-btn' : 'sell-btn');
+        document.getElementById('modal-message').className = 'modal-message hidden';
+        document.getElementById('trade-modal').classList.remove('hidden');
+        fetchPrice();
+    }
+
+    function closeModal() {
+        document.getElementById('trade-modal').classList.add('hidden');
+    }
+
+    document.getElementById('modal-shares').addEventListener('input', updateTotal);
+
+    document.getElementById('trade-modal').addEventListener('click', e => {
+        if (e.target === document.getElementById('trade-modal')) closeModal();
+    });
+
+    async function confirmTrade() {
+        const shares = parseFloat(document.getElementById('modal-shares').value);
+        if (!shares || shares <= 0) { showModalMsg('Enter a valid quantity.', true); return; }
+        const btn = document.getElementById('modal-confirm');
+        btn.disabled = true; btn.textContent = 'Processing…';
+        try {
+            const r = await fetch(`/api/${tradeAction}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker: TICKER, shares })
+            });
+            const d = await r.json();
+            if (d.success) {
+                showModalMsg(d.message, false);
+                if (d.new_balance != null) {
+                    document.getElementById('user-balance').textContent = '$' + d.new_balance.toFixed(2);
+                    document.getElementById('modal-balance').textContent = '$' + d.new_balance.toFixed(2);
+                }
+                setTimeout(() => { closeModal(); location.reload(); }, 1400);
+            } else {
+                showModalMsg(d.error || 'Trade failed.', true);
+                btn.disabled = false;
+                btn.textContent = tradeAction === 'buy' ? 'Buy' : 'Sell';
+            }
+        } catch (err) {
+            showModalMsg('Network error.', true);
+            btn.disabled = false;
+            btn.textContent = tradeAction === 'buy' ? 'Buy' : 'Sell';
+        }
+    }
+
+    function showModalMsg(text, isError) {
+        const el = document.getElementById('modal-message');
+        el.textContent = text;
+        el.className = 'modal-message ' + (isError ? 'error' : 'success');
+    }
+    </script>
+
+    <!-- PAGE CONTROLS -->
+    <script>
+    window.addEventListener('DOMContentLoaded', () => {
+        const stockInput  = document.getElementById('stock-input');
+        const suggestions = document.getElementById('suggestions');
+        const iframe      = document.getElementById('stock-graph');
+        const form        = document.getElementById('search-form');
+        const darkBtn     = document.getElementById('dark-mode-btn');
+        const cbBtn       = document.getElementById('colorblind-btn');
+        const timeBtns    = document.querySelectorAll('.time-btn');
+
+        function iframeParam(key, val) {
+            const u = new URL(iframe.src, location.origin);
+            u.searchParams.set(key, val);
+            iframe.src = u.toString();
+        }
+
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            darkBtn.classList.add('active');
+            iframeParam('darkmode', 'true');
+        }
+        if (localStorage.getItem('colorblindMode') === 'true') {
+            document.body.classList.add('colorblind-mode');
+            cbBtn.classList.add('active');
+            iframeParam('colorblind', 'true');
+        }
+
+        darkBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const on = document.body.classList.contains('dark-mode');
+            darkBtn.classList.toggle('active', on);
+            localStorage.setItem('darkMode', on);
+            iframeParam('darkmode', on ? 'true' : 'false');
+        });
+
+        cbBtn.addEventListener('click', () => {
+            document.body.classList.toggle('colorblind-mode');
+            const on = document.body.classList.contains('colorblind-mode');
+            cbBtn.classList.toggle('active', on);
+            localStorage.setItem('colorblindMode', on);
+            iframeParam('colorblind', on ? 'true' : 'false');
+        });
+
+        timeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                timeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                iframeParam('time', btn.dataset.value);
+            });
+        });
+        timeBtns[0].classList.add('active');
+
+        stockInput.addEventListener('input', async () => {
+            const q = stockInput.value.trim();
+            if (!q) { suggestions.style.display = 'none'; suggestions.innerHTML = ''; return; }
+            try {
+                const data = await fetch(`/autocomplete_stock?query=${q}`).then(r => r.json());
+                suggestions.innerHTML = '';
+                if (!data.length) { suggestions.style.display = 'none'; return; }
+                data.forEach(item => {
+                    const d = document.createElement('div');
+                    d.className = 'suggestion';
+                    d.textContent = `${item.name} (${item.symbol})`;
+                    d.addEventListener('click', () => {
+                        stockInput.value = item.symbol;
+                        suggestions.style.display = 'none';
+                        form.submit();
+                    });
+                    suggestions.appendChild(d);
+                });
+                suggestions.style.display = 'block';
+            } catch {}
+        });
+
+        stockInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                const first = suggestions.querySelector('.suggestion');
+                if (first) {
+                    e.preventDefault();
+                    const m = first.textContent.match(/\(([^)]+)\)/);
+                    if (m) { stockInput.value = m[1]; form.submit(); }
+                }
+            }
+        });
+
+        document.addEventListener('click', e => {
+            if (!suggestions.contains(e.target) && e.target !== stockInput)
+                suggestions.style.display = 'none';
+        });
+    });
+    </script>
+</body>
+</html>

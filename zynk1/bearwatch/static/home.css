@@ -1,0 +1,112 @@
+/* home.css — layout; tokens in base.css */
+
+body {
+    display: grid;
+    grid-template-areas:
+        "top-bar  top-bar  top-bar  top-bar"
+        "graph    graph    graph    trending"
+        "time     time     time     trending"
+        "news     news     news     news";
+    grid-template-columns: 1fr 1fr 1fr 220px;
+    grid-template-rows: var(--bar-h) 560px auto auto;
+    min-height: 100vh;
+}
+
+#top-bar      { grid-area: top-bar; }
+#graph        { grid-area: graph; }
+#time-buttons { grid-area: time; padding: 8px 20px 12px; }
+#trending     { grid-area: trending; padding: 20px 16px; overflow-y: auto; border-left: 1px solid var(--border); }
+#news-section { grid-area: news; padding: 28px 32px 40px; background: var(--bg-panel); border-top: 1px solid var(--border); }
+
+/* ── Graph iframe ── */
+#graph iframe {
+    width: 100%;
+    height: 560px;
+    border: none;
+    display: block;
+}
+
+/* ── Trending ── */
+#trending h2 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+}
+
+/* ── News section heading ── */
+#news-section .news-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+#news-section .news-heading h2 {
+    font-size: 20px;
+    margin: 0;
+}
+
+#news-section .news-heading a {
+    font-size: 13px;
+    color: var(--text-muted);
+    transition: color 0.15s;
+}
+
+#news-section .news-heading a:hover { color: var(--accent); }
+
+/* ── Article cards grid ── */
+#news-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+.article-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-l);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.2s;
+    text-decoration: none;
+    color: inherit;
+}
+
+.article-card:hover {
+    box-shadow: 0 6px 20px var(--shadow);
+    transform: translateY(-2px);
+}
+
+.article-card img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    display: block;
+    flex-shrink: 0;
+    background: var(--bg-panel);
+}
+
+.article-card-body {
+    padding: 14px 14px 18px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.article-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--text);
+    margin: 0;
+}
+
+.article-card-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: auto;
+}

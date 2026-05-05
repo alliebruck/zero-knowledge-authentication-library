@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>BearWatch — Login</title>
+    <link href="{{ url_for('static', filename='login.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div id="login-container">
+        <div id="login-card">
+            <div id="brand">
+                <img src="{{ url_for('static', filename='BearWatchLogo.png') }}" alt="BearWatch">
+                <p class="subtitle">Paper Trading Platform</p>
+            </div>
+
+            <div id="auth-tabs">
+                <button class="tab-btn active" data-tab="login-form">Sign In</button>
+                <button class="tab-btn" data-tab="register-form">Register</button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <div id="login-form" class="tab-panel active">
+                <div class="extension-notice" id="ext-notice-login">
+                    <span class="ext-icon">🔐</span>
+                    <span id="ext-status-login">Checking for Zynk1 extension...</span>
+                </div>
+                <p class="form-hint">Enter your email. Your cryptographic key will be loaded automatically.</p>
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+                </div>
+                <button class="btn-primary" id="login-btn" onclick="handleLogin()">Sign In with ZK Proof</button>
+                <div id="login-message" class="message hidden"></div>
+            </div>
+
+            <!-- REGISTER FORM -->
+            <div id="register-form" class="tab-panel hidden">
+                <div class="extension-notice" id="ext-notice-register">
+                    <span class="ext-icon">🔐</span>
+                    <span id="ext-status-register">Checking for Zynk1 extension...</span>
+                </div>
+                <p class="form-hint">Create an account. A cryptographic key pair will be generated and stored locally.</p>
+                <div class="form-group">
+                    <label for="reg-name">Display Name</label>
+                    <input type="text" id="reg-name" placeholder="Your Name" autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">Email</label>
+                    <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email">
+                </div>
+                <button class="btn-primary" id="register-btn" onclick="handleRegister()">Create Account</button>
+                <div id="register-message" class="message hidden"></div>
+            </div>
+
+            <div id="zk-info">
+                <p>🛡️ Authentication uses Zero-Knowledge Proofs — your private key never leaves your device.</p>
+                <p>Install the <strong>Zynk1 Authenticator</strong> extension for cross-device key management.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='auth.js') }}?v=zk-extension-store-1"></script>
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => {
+                    p.classList.remove('active');
+                    p.classList.add('hidden');
+                });
+                btn.classList.add('active');
+                const panel = document.getElementById(btn.dataset.tab);
+                panel.classList.remove('hidden');
+                panel.classList.add('active');
+            });
+        });
+
+        function showMessage(id, text, isError) {
+            const el = document.getElementById(id);
+            el.textContent = text;
+            el.className = 'message ' + (isError ? 'error' : 'success');
+        }
+
+        function setLoading(btnId, loading) {
+            const btn = document.getElementById(btnId);
+            btn.disabled = loading;
+            btn.textContent = loading ? 'Processing...' : (btnId === 'login-btn' ? 'Sign In with ZK Proof' : 'Create Account');
+        }
+
+        async function checkExtension() {
+            const extension = await getExtensionAccounts();
+            const accounts = extension.accounts || [];
+            const msg = extension.installed
+                ? `✅ Zynk1 extension connected (${accounts.length} account${accounts.length !== 1 ? 's' : ''})`
+                : '⚠️ Extension not detected — using local key storage';
+            document.getElementById('ext-status-login').textContent = msg;
+            document.getElementById('ext-status-register').textContent = msg;
+            return accounts;
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value.trim().toLowerCase();
+            if (!email) {
+                showMessage('login-message', 'Please enter your email.', true);
+                return;
+            }
+            setLoading('login-btn', true);
+            try {
+                const creds = loadCredentials();
+                if (!creds || creds.email !== email) {
+                    showMessage('login-message', 'No credentials found for this email. Please register first, or check your email.', true);
+                    setLoading('login-btn', false);
+                    return;
+                }
+                const challenge = await fetchAuthChallenge();
+                const proof = await generateProof(creds.privKey, creds.pubKey, challenge.challenge, challenge.timestamp);
+                const resp = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pub_key: creds.pubKey,
+                        proof,
+                        challenge: challenge.challenge,
+                        timestamp: challenge.timestamp
+                    })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    showMessage('login-message', `Welcome back, ${result.user.name}! Redirecting...`, false);
+                    setTimeout(() => { window.location.href = '/portfolio'; }, 800);
+                } else {
+                    showMessage('login-message', result.error || 'Login failed.', true);
+                }
+            } catch (err) {
+                showMessage('login-message', 'Error: ' + err.message, true);
+            }
+            setLoading('login-btn', false);
+        }
+
+        async function handleRegister() {
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim().toLowerCase();
+            if (!email) {
+                showMessage('register-message', 'Please enter your email.', true);
+                return;
+            }
+            setLoading('register-btn', true);
+            try {
+                const keyPair = await generateKeyPair();
+                saveCredentials(email, keyPair.publicKey, keyPair.privateKey);
+
+                const challenge = await fetchAuthChallenge();
+                const proof = await generateProof(keyPair.privateKey, keyPair.publicKey, challenge.challenge, challenge.timestamp);
+                const resp = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email,
+                        name,
+                        pub_key: keyPair.publicKey,
+                        proof,
+                        challenge: challenge.challenge,
+                        timestamp: challenge.timestamp
+                    })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    const extensionStore = await notifyExtensionNewUser(email, keyPair.publicKey, keyPair.privateKey);
+                    if (!extensionStore.success) {
+                        console.warn('Extension account storage failed:', extensionStore.error);
+                    }
+                    await checkExtension();
+                    showMessage('register-message', `Account created! Starting with $10,000. Redirecting...`, false);
+                    setTimeout(() => { window.location.href = '/portfolio'; }, 1000);
+                } else {
+                    showMessage('register-message', result.error || 'Registration failed.', true);
+                    clearCredentials();
+                }
+            } catch (err) {
+                showMessage('register-message', 'Error: ' + err.message, true);
+            }
+            setLoading('register-btn', false);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            checkExtension();
+            // Pre-fill email if creds exist in localStorage
+            const creds = loadCredentials();
+            if (creds && creds.email) {
+                document.getElementById('login-email').value = creds.email;
+            }
+        });
+    </script>
+</body>
+</html>

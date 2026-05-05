@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>{{ title }} — BearWatch</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='article.css') }}">
+</head>
+<body>
+
+    <!-- TOP BAR -->
+    <header id="top-bar">
+        <a href="/" id="logo-link">
+            <img src="{{ url_for('static', filename='BearWatchLogo.png') }}" alt="BearWatch">
+        </a>
+        <div id="search-wrap">
+            <form id="search-form" action="/stock" method="GET">
+                <div class="search-inner">
+                    <input class="search-input" id="stock-input" name="stock"
+                           type="text" placeholder="Search stocks…" autocomplete="off">
+                    <div id="suggestions" class="suggestions-box"></div>
+                </div>
+            </form>
+        </div>
+        <nav id="top-nav">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/news.html" class="nav-link active">News</a>
+            {% if current_user %}
+            <div class="nav-divider"></div>
+            <a href="/portfolio" class="nav-link">Portfolio</a>
+            <a href="/logout" class="nav-link nav-muted">↩ {{ current_user.name }}</a>
+            {% else %}
+            <div class="nav-divider"></div>
+            <a href="/login" class="nav-pill">Login</a>
+            {% endif %}
+            <button class="nav-btn" id="dark-mode-btn" title="Toggle dark mode">◑</button>
+        </nav>
+    </header>
+
+    <!-- MAIN -->
+    <main id="article-main">
+
+        <!-- ARTICLE CONTENT -->
+        <div id="article-content">
+            <a href="javascript:history.back()" id="back-link">← Back</a>
+
+            {% if image %}
+            <img id="article-hero" src="{{ image }}" alt="">
+            {% endif %}
+
+            <div id="article-meta">
+                {% if publisher %}<span class="article-publisher">{{ publisher }}</span>{% endif %}
+                {% if publisher and date %}<span class="article-sep">·</span>{% endif %}
+                {% if date %}<span class="article-date">{{ date }}</span>{% endif %}
+            </div>
+
+            <h1 id="article-title">{{ title }}</h1>
+
+            <!-- DYNAMIC CONTENT (loaded via JS) -->
+            <div id="article-body">
+                <div id="article-loading" class="loading-row">
+                    <span class="loading-dot"></span>
+                    <span class="loading-dot"></span>
+                    <span class="loading-dot"></span>
+                    <span>Loading article…</span>
+                </div>
+                <p id="article-summary" class="article-summary hidden"></p>
+                <div id="article-paragraphs"></div>
+                <div id="article-blocked" class="blocked-notice hidden">
+                    <p>This publisher restricts content access. Read the full article at the source.</p>
+                </div>
+            </div>
+
+            <a id="read-btn" href="{{ link }}" target="_blank" rel="noopener" class="btn btn-primary">
+                Read Full Article →
+            </a>
+
+            <!-- RELATED STOCKS -->
+            {% if related_stocks %}
+            <div id="article-stocks">
+                <h3 class="section-title">Mentioned Stocks</h3>
+                <div id="stock-cards">
+                    {% for s in related_stocks %}
+                    <a class="stock-card" href="/stock?stock={{ s.ticker }}">
+                        <div class="stock-card-info">
+                            <span class="stock-card-ticker">{{ s.ticker }}</span>
+                            <span class="stock-card-name">{{ s.name }}</span>
+                        </div>
+                        <div class="stock-card-price-wrap">
+                            {% if s.price != 'N/A' %}
+                            <span class="stock-card-price">${{ "%.2f"|format(s.price) }}</span>
+                            <span class="change-badge {{ 'positive-change' if s.change > 0 else 'negative-change' }}">
+                                {{ '%+.2f'|format(s.change) }}%
+                            </span>
+                            {% else %}
+                            <span class="stock-card-price" style="color:var(--text-muted);">N/A</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- SIDEBAR -->
+        <aside id="article-sidebar">
+            {% if related %}
+            <h2 class="section-title">Related Articles</h2>
+            {% for a in related %}
+            <a class="related-card" href="{{ a.article_url }}">
+                {% if a.image %}
+                <img src="{{ a.image }}" alt="">
+                {% endif %}
+                <div class="related-card-body">
+                    <p class="related-card-title">{{ a.title }}</p>
+                    <span class="related-card-meta">
+                        {% if a.publisher %}{{ a.publisher }}{% endif %}
+                        {% if a.publisher and a.date %} · {% endif %}
+                        {% if a.date %}{{ a.date }}{% endif %}
+                    </span>
+                </div>
+            </a>
+            {% endfor %}
+            {% endif %}
+        </aside>
+
+    </main>
+
+    <script>
+    const ARTICLE_URL = {{ link | tojson }};
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const darkBtn = document.getElementById('dark-mode-btn');
+        const stockInput = document.getElementById('stock-input');
+        const suggestions = document.getElementById('suggestions');
+        const form = document.getElementById('search-form');
+
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            darkBtn.classList.add('active');
+        }
+
+        darkBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const on = document.body.classList.contains('dark-mode');
+            darkBtn.classList.toggle('active', on);
+            localStorage.setItem('darkMode', on);
+        });
+
+        stockInput.addEventListener('input', async () => {
+            const q = stockInput.value.trim();
+            if (!q) { suggestions.style.display = 'none'; suggestions.innerHTML = ''; return; }
+            try {
+                const data = await fetch(`/autocomplete_stock?query=${q}`).then(r => r.json());
+                suggestions.innerHTML = '';
+                if (!data.length) { suggestions.style.display = 'none'; return; }
+                data.forEach(item => {
+                    const d = document.createElement('div');
+                    d.className = 'suggestion';
+                    d.textContent = `${item.name} (${item.symbol})`;
+                    d.addEventListener('click', () => {
+                        stockInput.value = item.symbol;
+                        suggestions.style.display = 'none';
+                        form.submit();
+                    });
+                    suggestions.appendChild(d);
+                });
+                suggestions.style.display = 'block';
+            } catch {}
+        });
+
+        document.addEventListener('click', e => {
+            if (!suggestions.contains(e.target) && e.target !== stockInput)
+                suggestions.style.display = 'none';
+        });
+
+        // Fetch article content
+        loadArticleContent();
+    });
+
+    async function loadArticleContent() {
+        const loading = document.getElementById('article-loading');
+        const summary = document.getElementById('article-summary');
+        const paragraphsEl = document.getElementById('article-paragraphs');
+        const blocked = document.getElementById('article-blocked');
+
+        try {
+            const data = await fetch(`/api/fetch_article?url=${encodeURIComponent(ARTICLE_URL)}`).then(r => r.json());
+
+            loading.style.display = 'none';
+
+            if (data.summary) {
+                summary.textContent = data.summary;
+                summary.classList.remove('hidden');
+            }
+
+            if (data.paragraphs && data.paragraphs.length > 0) {
+                paragraphsEl.innerHTML = data.paragraphs
+                    .map(p => `<p class="article-para">${escapeHtml(p)}</p>`)
+                    .join('');
+            } else if (!data.summary) {
+                blocked.classList.remove('hidden');
+            }
+        } catch {
+            loading.style.display = 'none';
+            blocked.classList.remove('hidden');
+        }
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    </script>
+</body>
+</html>

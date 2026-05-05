@@ -1,0 +1,9 @@
+flask
+dash
+plotly
+yfinance
+requests
+beautifulsoup4
+scikit-learn
+pandas
+cryptography
