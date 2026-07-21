@@ -127,7 +127,7 @@ async function getExtensionAccounts() {
 function updateExtensionStatus(extension) {
     const accounts = extension.accounts || [];
     const message = extension.installed
-        ? `✅ Zynk1 extension connected (${accounts.length} account${accounts.length !== 1 ? 's' : ''})`
+        ? `✅ Zynk extension connected (${accounts.length} account${accounts.length !== 1 ? 's' : ''})`
         : '⚠️ Extension not detected — using local key storage';
 
     const loginStatus = document.getElementById('ext-status-login');

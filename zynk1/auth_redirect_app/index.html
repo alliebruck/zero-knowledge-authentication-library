@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zynk Auth App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-box">
+            <div class="auth-header">
+                <h1>Zynk</h1>
+                <p>Authentication App</p>
+            </div>
+
+            <div id="accountSelector" class="account-selector hidden">
+                <h3>Select an account to log in</h3>
+                <ul id="accountList"></ul>
+                <button id="showRegisterBtn" class="btn btn-secondary">Use a different account</button>
+            </div>
+
+            <div id="authForms">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login">Sign In</button>
+                    <button class="auth-tab" data-tab="register">Register</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="loginForm" class="auth-form active">
+                    <div class="form-group">
+                        <label for="loginEmail">Email Address</label>
+                        <input type="email" id="loginEmail" placeholder="Enter your university email" autocomplete="email" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Sign In with Zynk</button>
+                    <div id="loginMessage" class="message"></div>
+                </form>
+
+                <!-- Register Form -->
+                <form id="registerForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="registerEmail">Email Address</label>
+                        <input type="email" id="registerEmail" placeholder="Enter your university email" autocomplete="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerName">Full Name</label>
+                        <input type="text" id="registerName" placeholder="Enter your full name" autocomplete="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerRole">I am a</label>
+                        <select id="registerRole">
+                            <option value="student">Student</option>
+                            <option value="professor">Professor / Advisor</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Account with Zynk</button>
+                    <div id="registerMessage" class="message"></div>
+                </form>
+            </div>
+
+            <div class="auth-footer">
+                <p>Secure passwordless authentication using locally stored cryptographic credentials</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Need Ed25519 and Sha512 for proof generation -->
+    <script type="importmap">
+    {
+      "imports": {
+        "@noble/curves/ed25519.js": "https://unpkg.com/@noble/curves@1.4.0/esm/ed25519.js",
+        "@noble/hashes/sha2.js": "https://unpkg.com/@noble/hashes@1.4.0/esm/sha2.js",
+        "@noble/hashes/utils.js": "https://unpkg.com/@noble/hashes@1.4.0/esm/utils.js",
+        "@noble/curves/abstract/modular.js": "https://unpkg.com/@noble/curves@1.4.0/esm/abstract/modular.js",
+        "@noble/curves/abstract/curve.js": "https://unpkg.com/@noble/curves@1.4.0/esm/abstract/curve.js",
+        "@noble/curves/abstract/edwards.js": "https://unpkg.com/@noble/curves@1.4.0/esm/abstract/edwards.js",
+        "@noble/curves/abstract/utils.js": "https://unpkg.com/@noble/curves@1.4.0/esm/abstract/utils.js",
+        "@noble/curves/utils.js": "https://unpkg.com/@noble/curves@1.4.0/esm/utils.js"
+      }
+    }
+    </script>
+    <script src="script.js" type="module"></script>
+</body>
+</html>

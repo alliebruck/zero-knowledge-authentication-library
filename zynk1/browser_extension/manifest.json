@@ -1,36 +1,38 @@
 {
     "manifest_version": 3,
-    "name": "Zynk1 Authenticator",
-    "version": "0.1.0",
-    "description": "Manages ZKP secrets for Zynk1 authentication.",
+    "name": "Zynk Authenticator",
+    "version": "0.3.0",
+    "description": "Securely manages credentials for Zynk passwordless authentication.",
     "permissions": [
-        "storage",
-        "tabs",
-        "windows"
-    ],
-    "host_permissions": [
-        "http://localhost:3000/*"
+        "storage"
     ],
     "action": {
         "default_popup": "popup.html"
     },
-    "content_security_policy": {
-        "extension_pages": "script-src 'self' 'wasm-unsafe-eval'"
-    },
     "background": {
-        "service_worker": "background.js",
+        "service_worker": "background.bundle.js",
         "type": "module"
     },
     "content_scripts": [
         {
-            "matches": ["http://localhost:8000/*", "http://127.0.0.1:8000/*", "http://172.20.200.167:8000/*"],
+            "matches": [
+                "http://localhost:8000/*",
+                "http://127.0.0.1:8000/*",
+                "http://172.20.200.167:8000/*",
+                "http://localhost:3000/*",
+                "http://127.0.0.1:3000/*",
+                "http://localhost:3001/*",
+                "http://127.0.0.1:3001/*",
+                "http://localhost:5000/*",
+                "http://127.0.0.1:5000/*",
+                "http://localhost:5001/*",
+                "http://127.0.0.1:5001/*",
+                "http://localhost:5002/*",
+                "http://127.0.0.1:5002/*",
+                "http://localhost:5003/*",
+                "http://127.0.0.1:5003/*"
+            ],
             "js": ["content.js"]
-        }
-    ],
-    "web_accessible_resources": [
-        {
-            "resources": ["auth.wasm", "auth_final.zkey"],
-            "matches": ["<all_urls>"]
         }
     ]
 }

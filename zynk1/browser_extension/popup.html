@@ -1,22 +1,154 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Zynk1 Authenticator</title>
+    <meta charset="UTF-8">
+    <title>Zynk Authenticator</title>
     <style>
-        body { font-family: sans-serif; width: 200px; padding: 10px; text-align: center; }
-        h1 { font-size: 16px; }
-        p { font-size: 14px; }
+        :root {
+            --primary: #2563eb;
+            --bg: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            width: 300px;
+            margin: 0;
+            padding: 16px;
+            background-color: var(--bg);
+            color: var(--text);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .logo {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        h1 {
+            font-size: 18px;
+            margin: 0;
+            font-weight: 600;
+        }
+        .status-card {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+        .status-card p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+        .section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            padding: 10px 12px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        li:before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+        }
+        .account-email {
+            flex: 1;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+        .remove-btn,
+        .clear-btn {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #ffffff;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 8px;
+        }
+        .remove-btn:hover,
+        .clear-btn:hover {
+            color: #b91c1c;
+            border-color: #fecaca;
+            background: #fef2f2;
+        }
+        .clear-btn {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-style: italic;
+        }
+        .footer {
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h1>Zynk1 Authenticator</h1>
-    <p>This extension manages your keys automatically.</p>
-    <div id="userList">
-        <h2>Registered Accounts:</h2>
-        <ul id="accountList">
-            <li>Loading...</li>
-        </ul>
+    <div class="header">
+        <div class="logo">Z</div>
+        <h1>Zynk</h1>
     </div>
+
+    <div class="status-card">
+        <p>Your cryptographic secrets are securely managed and never leave this extension.</p>
+    </div>
+
+    <div class="section-title">Connected Accounts</div>
+    <ul id="accountList">
+        <div class="empty-state">Loading accounts...</div>
+    </ul>
+    <button class="clear-btn" id="clearAllBtn" type="button" hidden>Clear All Accounts</button>
+
+    <div class="footer">
+        Passwordless authentication, secured by cryptography
+    </div>
+
     <script src="popup.js"></script>
 </body>
 </html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zynk - Authentication Platform</title>
+    <link rel="stylesheet" href="/auth/style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-box">
+            <div class="auth-header">
+                <h1>Zynk</h1>
+                <p>Authentication Platform</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Sign In</button>
+                <button class="auth-tab" data-tab="register">Register</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active">
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input type="email" id="loginEmail" placeholder="Enter your university email" autocomplete="email" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Secure Sign In</button>
+                <div class="auth-divider"><span>OR</span></div>
+                <button type="button" id="loginWithAppBtn" class="btn btn-secondary">Sign In with Zynk App</button>
+                <div id="loginMessage" class="message"></div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="registerEmail">Email Address</label>
+                    <input type="email" id="registerEmail" placeholder="Enter your university email" autocomplete="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerName">Full Name</label>
+                    <input type="text" id="registerName" placeholder="Enter your full name" autocomplete="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerRole">I am a</label>
+                    <select id="registerRole">
+                        <option value="student">Student</option>
+                        <option value="professor">Professor / Advisor</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Create Account</button>
+                <div id="registerMessage" class="message"></div>
+            </form>
+
+            <div class="auth-footer">
+                <p>Secure passwordless authentication using cryptographic credentials</p>
+                <p style="margin-top: 0.5rem;">Requires the Zynk Browser Extension</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/auth/script.js" type="module"></script>
+</body>
+</html>
