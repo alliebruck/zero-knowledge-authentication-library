@@ -2,9 +2,11 @@
 
 ![Authentication](https://img.shields.io/badge/Authentication-Passwordless-success)
 ![Cryptography](https://img.shields.io/badge/Cryptography-Ed25519-blueviolet)
-![API](https://img.shields.io/badge/API-Express-informational)
-![Extension](https://img.shields.io/badge/Browser-Chrome_Extension-yellow)
-![AI Integration](https://img.shields.io/badge/AI-OpenAI-lightgrey)
+
+![Backend](https://img.shields.io/badge/Backend-Express-000000?logo=express)
+![Browser](https://img.shields.io/badge/Browser-Chrome_Extension-4285F4?logo=googlechrome)
+
+![AI](https://img.shields.io/badge/AI-OpenAI-412991)
 
 Zynk is a senior capstone project that explores passwordless authentication through cryptographic proof of private-key ownership. Instead of sending a password, the client signs a short-lived server challenge and the server verifies it against the user's registered public key.
 
