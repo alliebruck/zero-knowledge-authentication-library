@@ -1,106 +1,132 @@
-# Zero-Knowledge Authentication Library
+# Zynk | Passwordless Cryptographic Authentication
 
-A cryptographic authentication library demonstrating zero-knowledge proof (ZKP) authentication without transmitting or storing user secrets. This project was developed as part of a senior capstone project and explores how zero-knowledge proofs can be used to securely verify user identity while mitigating common authentication attacks.
+![Authentication](https://img.shields.io/badge/Authentication-Passwordless-success)
+![Cryptography](https://img.shields.io/badge/Cryptography-Ed25519-blueviolet)
+![API](https://img.shields.io/badge/API-Express-informational)
+![Extension](https://img.shields.io/badge/Browser-Chrome_Extension-yellow)
+![AI](https://img.shields.io/badge/AI-OpenAI-lightgrey)
 
-## Overview
+Zynk is a senior capstone project that explores passwordless authentication through cryptographic proof of private-key ownership. Instead of sending a password, the client signs a short-lived server challenge and the server verifies it against the user's registered public key.
 
-Traditional password authentication requires transmitting secrets or password-derived values that can become targets for attackers. This library demonstrates an alternative authentication approach where a user proves knowledge of a secret without revealing the secret itself.
+The project demonstrates a reusable passwordless authentication library through an Express API, a Chrome extension for client-side credential management, and BearWatch, a paper-trading application used to showcase integration. It also includes an authenticated AI stock agent demonstrating how AI-enabled applications can securely authenticate users.
 
-The project includes proof generation, proof verification, replay attack protection, and integration into a browser extension and web application.
+> **Technical note:** The current prototype uses Ed25519 challenge-response signatures. It proves possession of a private key without transmitting that key; it is not a general-purpose zero-knowledge proof system such as a zk-SNARK.
 
-To demonstrate a real-world use case, the project also included an AI-powered assistant that integrated directly with the authentication library. Users authenticated through the zero-knowledge proof workflow before interacting with the assistant, showcasing how AI applications can leverage secure authentication without exposing sensitive credentials.
+## Screenshots
 
+| Bearwatch sign in | Zynk Authenticator |
+| --- | --- |
+| ![Bearwatch passwordless sign-in screen](images/bearwatch-sign-in.png) | ![Zynk browser extension showing connected accounts](images/zynk-extension.png) |
 
+### AI Agent Integration
 
-## Features
+![Zynk authenticated AI paper-trading workflow](images/ai-agent-workflow.png)
 
-- Zero-knowledge proof generation and verification
-- Replay attack protection using timestamp validation
-- Secure challenge-response authentication workflow
-- Ed25519-based cryptographic operations
-- Browser extension authentication support
-- REST API integration with the authentication service
-- Modular authentication library suitable for integration into web applications
-- AI-powered assistant demonstrating how applications can securely authenticate using the zero-knowledge authentication library
+## Key Features
 
-
-
-## Technologies
-
-- Python
-- Flask
-- JavaScript
-- HTML/CSS
-- Ed25519 Cryptography
-- REST APIs
-
-
-
-## Authentication Workflow
-
-1. User registers a public key with the server.
-2. Server generates a random authentication challenge.
-3. Client generates a cryptographic proof using its private key.
-4. Client sends the proof and timestamp.
-5. Server verifies:
-   - Proof validity
-   - Timestamp freshness
-   - Public key ownership
-6. User is authenticated without exposing their secret.
-
-
-
-## My Contributions
-
-This repository represents my contributions to our senior capstone project.
-
-My primary responsibilities included:
-
-- Designing and implementing the zero-knowledge proof authentication library
-- Developing proof generation and verification logic
-- Implementing replay attack protection through timestamp validation
-- Integrating the authentication workflow with the web application
-- Designing portions of the authentication architecture
-- Testing and debugging the authentication process
-- Integrated the authentication library with an AI-powered assistant to demonstrate secure authentication within a modern AI application workflow.
-
-
-## Security Considerations
-
-This project demonstrates several secure authentication principles including:
-
-- Zero-knowledge authentication
-- Replay attack mitigation
-- Challenge-response authentication
-- Public/private key cryptography
-- Secure proof verification
+- **Passwordless authentication:** users authenticate with an Ed25519 public/private key pair
+- **Replay resistance:** Bearwatch uses single-use 32-byte challenges with timestamp validation
+- **Client-side signing:** private-key operations run locally and secrets are never sent to the server
+- **Browser integration:** a Chrome Manifest V3 extension manages client credentials
+- **Reusable backend:** an Express REST API supports registration, login, sessions, and user profiles
+- **End-to-end demo:** Bearwatch includes portfolios, simulated trades, market data, and an optional OpenAI-powered agent
+- **Modular architecture:** authentication logic is encapsulated in a reusable library that can be integrated into multiple applications
 
 ## System Architecture
 
-The system separates authentication logic into a reusable zero-knowledge proof library that is consumed by an Authentication API. This modular design allows multiple applications—including the web application and an AI assistant—to authenticate users securely without exposing or storing passwords.
+![Zynk system architecture](images/architecture.png)
 
+The authentication logic is encapsulated in a reusable library that can be integrated into multiple applications. BearWatch serves as the demonstration application, while the AI agent illustrates how authenticated AI workflows can leverage the same authentication system.
 
+1. The client generates an Ed25519 key pair and registers the public key.
+2. The server creates a random, time-limited challenge.
+3. The client signs `public key + challenge + timestamp` with its private key.
+4. The server validates the timestamp, challenge, signature, and registered public key.
+5. The challenge is consumed and the server creates an authenticated session.
 
-## Future Improvements
+## My Contributions
 
-Potential future enhancements include:
+Zynk was developed as a three-person senior capstone. My primary contributions included:
 
-- Multi-factor authentication
-- Hardware security key integration
-- Additional cryptographic proof protocols
-- Expanded testing and benchmarking
-- OAuth/OpenID Connect integration
+- Designing and implementing the Ed25519 challenge-signing and signature verification workflow
+- Adding single-use challenges and timestamp validation to mitigate replay attacks
+- Integrating passwordless registration and login into the Express API and Bearwatch
+- Building browser-extension support for client-side credential management
+- Developing and testing an AI-agent proof of concept that authenticates before accessing paper-trading tools
+- Contributing to system architecture, integration testing, and debugging
 
+## Technology Stack
 
+| Area | Technologies |
+| --- | --- |
+| Cryptography | Ed25519, `@noble/curves`, `@noble/hashes` |
+| Authentication API | Node.js, Express, Express Session, MySQL |
+| Browser client | JavaScript, Chrome Extension Manifest V3 |
+| Demo application | Python, Flask, Dash, SQLite |
+| Market features | Plotly, pandas, yfinance, scikit-learn |
+| AI agent | OpenAI API with tool calling |
+| Testing | Jest, Mocha, Selenium |
 
-## Team Project
+## Quick Start
 
-This project originated as a senior capstone completed by a three-person team.
+### Prerequisites
 
-This repository serves as my portfolio version and highlights the portions of the project that I personally implemented and maintained.
+- Python 3.10 or newer
+- A Chromium-based browser
+- An OpenAI API key only for the optional AI-agent feature
 
+### Run Bearwatch
 
+From the repository root in PowerShell:
+
+```powershell
+cd bearwatch
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python "test1.01.py"
+```
+
+Open [http://localhost:5000](http://localhost:5000).
+
+### Load the Zynk Extension
+
+1. Open `chrome://extensions` in Chrome or Edge.
+2. Enable **Developer mode** and select **Load unpacked**.
+3. Choose the repository's `browser_extension` directory.
+4. Refresh the Bearwatch login page and confirm it says **Zynk extension connected**.
+
+### Optional: Enable the AI Agent
+
+Set your API key before starting Bearwatch:
+
+```powershell
+$env:OPENAI_API_KEY="your-api-key"
+$env:OPENAI_MODEL="gpt-4o-mini" # optional
+python "test1.01.py"
+```
+
+The agent uses only a simulated paper-trading account and cannot execute real financial transactions.
+
+## Standalone API and Tests
+
+The separate Express/MySQL integration runs on port 3000:
+
+```powershell
+npm install
+npm start --workspace core_api
+```
+
+It reads `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_DATABASE`, and `SESSION_SECRET` from `core_api/.env`. Run its tests with:
+
+```powershell
+npm test --workspace core_api
+```
+
+## Security Scope
+
+Zynk is an educational prototype, not a production authentication provider. Production use would require HTTPS, CSRF protection, rate limiting, persistent challenge storage, secure hardware- or OS-backed key storage, key recovery and rotation, security auditing, and consideration of a standard such as WebAuthn.
 
 ## License
 
-This repository is provided for educational and portfolio purposes.
+Provided for educational and portfolio purposes. No open-source license has been granted.
