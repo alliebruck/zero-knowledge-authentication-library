@@ -8,7 +8,9 @@ Traditional password authentication requires transmitting secrets or password-de
 
 The project includes proof generation, proof verification, replay attack protection, and integration into a browser extension and web application.
 
----
+To demonstrate a real-world use case, the project also included an AI-powered assistant that integrated directly with the authentication library. Users authenticated through the zero-knowledge proof workflow before interacting with the assistant, showcasing how AI applications can leverage secure authentication without exposing sensitive credentials.
+
+
 
 ## Features
 
@@ -19,8 +21,9 @@ The project includes proof generation, proof verification, replay attack protect
 - Browser extension authentication support
 - REST API integration with the authentication service
 - Modular authentication library suitable for integration into web applications
+- AI-powered assistant demonstrating how applications can securely authenticate using the zero-knowledge authentication library
 
----
+
 
 ## Technologies
 
@@ -31,7 +34,7 @@ The project includes proof generation, proof verification, replay attack protect
 - Ed25519 Cryptography
 - REST APIs
 
----
+
 
 ## Authentication Workflow
 
@@ -45,7 +48,7 @@ The project includes proof generation, proof verification, replay attack protect
    - Public key ownership
 6. User is authenticated without exposing their secret.
 
----
+
 
 ## My Contributions
 
@@ -59,8 +62,8 @@ My primary responsibilities included:
 - Integrating the authentication workflow with the web application
 - Designing portions of the authentication architecture
 - Testing and debugging the authentication process
+- Integrated the authentication library with an AI-powered assistant to demonstrate secure authentication within a modern AI application workflow.
 
----
 
 ## Security Considerations
 
@@ -72,7 +75,7 @@ This project demonstrates several secure authentication principles including:
 - Public/private key cryptography
 - Secure proof verification
 
----
+
 
 ## Future Improvements
 
@@ -84,7 +87,7 @@ Potential future enhancements include:
 - Expanded testing and benchmarking
 - OAuth/OpenID Connect integration
 
----
+
 
 ## Team Project
 
@@ -92,7 +95,7 @@ This project originated as a senior capstone completed by a four-person team.
 
 This repository serves as my portfolio version and highlights the portions of the project that I personally implemented and maintained.
 
----
+
 
 ## License
 
