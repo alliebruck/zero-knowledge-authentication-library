@@ -75,6 +75,10 @@ This project demonstrates several secure authentication principles including:
 - Public/private key cryptography
 - Secure proof verification
 
+## System Architecture
+
+The system separates authentication logic into a reusable zero-knowledge proof library that is consumed by an Authentication API. This modular design allows multiple applications—including the web application and an AI assistant—to authenticate users securely without exposing or storing passwords.
+
 
 
 ## Future Improvements
@@ -91,7 +95,7 @@ Potential future enhancements include:
 
 ## Team Project
 
-This project originated as a senior capstone completed by a four-person team.
+This project originated as a senior capstone completed by a three-person team.
 
 This repository serves as my portfolio version and highlights the portions of the project that I personally implemented and maintained.
 
